@@ -1132,7 +1132,10 @@ export default function App() {
             if (currentUser) {
                 const tokenResult = await currentUser.getIdTokenResult();
                 setUser(currentUser);
-                setUserRole(tokenResult.claims.role || 'user');
+                
+                // Tymczasowe rozwiązanie: dodaj swój email tutaj, aby mieć uprawnienia admina
+                const adminEmails = ['admin@evshop.com']; // Dodaj swój email tutaj
+                setUserRole(adminEmails.includes(currentUser.email) ? 'admin' : (tokenResult.claims.role || 'user'));
             } else {
                 setUser(null);
                 setUserRole(null);
