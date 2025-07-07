@@ -1,0 +1,16 @@
+{
+  "short_name": "EV Akcesoria",
+  "name": "EV Akcesoria - Sklep z akcesoriami dla pojazdów elektrycznych",
+  "icons": [
+    {
+      "src": "favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#1e40af",
+  "background_color": "#111827",
+  "description": "Najlepsze akcesoria dla pojazdów elektrycznych. Ładowarki, kable, adaptery i więcej."
+}
