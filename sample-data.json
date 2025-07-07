@@ -1,0 +1,172 @@
+{
+  "products": [
+    {
+      "name": "Ładowarka Type 2 22kW",
+      "price": 1299.99,
+      "category": "Ładowarki",
+      "brand": "Tesla",
+      "description": "Profesjonalna ładowarka Type 2 z mocą 22kW, kompatybilna z większością pojazdów elektrycznych. Wbudowana ochrona przepięciowa i zabezpieczenie przed przegrzaniem.",
+      "imageUrls": [
+        "https://images.unsplash.com/photo-1593941707874-ef8115ba8c88?q=80&w=800&auto=format&fit=crop",
+        "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?q=80&w=800&auto=format&fit=crop"
+      ],
+      "bestseller": true,
+      "rating": 4.8,
+      "reviews": 127
+    },
+    {
+      "name": "Kabel ładowania CCS Combo",
+      "price": 899.99,
+      "category": "Kable",
+      "brand": "ChargePoint",
+      "description": "Wysokiej jakości kabel ładowania CCS Combo 2 o długości 5 metrów. Odporny na warunki atmosferyczne, z wbudowanym systemem chłodzenia.",
+      "imageUrls": [
+        "https://images.unsplash.com/photo-1609729954389-9e54d0c4a8b4?q=80&w=800&auto=format&fit=crop",
+        "https://images.unsplash.com/photo-1614680024908-9c60f838f7f3?q=80&w=800&auto=format&fit=crop"
+      ],
+      "bestseller": false,
+      "rating": 4.6,
+      "reviews": 89
+    },
+    {
+      "name": "Adapter Tesla na Type 2",
+      "price": 199.99,
+      "category": "Adaptery",
+      "brand": "Tesla",
+      "description": "Oryginalny adapter Tesla umożliwiający ładowanie pojazdu Tesla na stacjach z wtykiem Type 2. Kompaktowy i niezawodny.",
+      "imageUrls": [
+        "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?q=80&w=800&auto=format&fit=crop",
+        "https://images.unsplash.com/photo-1516824711555-0c40d2ab4c90?q=80&w=800&auto=format&fit=crop"
+      ],
+      "bestseller": true,
+      "rating": 4.9,
+      "reviews": 203
+    },
+    {
+      "name": "Stacja ładowania domowa 11kW",
+      "price": 2499.99,
+      "category": "Stacje ładowania",
+      "brand": "Wallbox",
+      "description": "Inteligentna stacja ładowania domowa z mocą 11kW. Aplikacja mobilna, harmonogram ładowania, monitoring zużycia energii.",
+      "imageUrls": [
+        "https://images.unsplash.com/photo-1609280443407-5e9c5d6d4c20?q=80&w=800&auto=format&fit=crop",
+        "https://images.unsplash.com/photo-1593941707874-ef8115ba8c88?q=80&w=800&auto=format&fit=crop"
+      ],
+      "bestseller": false,
+      "rating": 4.7,
+      "reviews": 156
+    },
+    {
+      "name": "Kabel CHAdeMO 50A",
+      "price": 1199.99,
+      "category": "Kable",
+      "brand": "ABB",
+      "description": "Kabel CHAdeMO o wysokiej wydajności 50A. Idealny do szybkiego ładowania pojazdów z wtyczką CHAdeMO jak Nissan Leaf.",
+      "imageUrls": [
+        "https://images.unsplash.com/photo-1614680024908-9c60f838f7f3?q=80&w=800&auto=format&fit=crop",
+        "https://images.unsplash.com/photo-1609729954389-9e54d0c4a8b4?q=80&w=800&auto=format&fit=crop"
+      ],
+      "bestseller": false,
+      "rating": 4.5,
+      "reviews": 67
+    },
+    {
+      "name": "Adapter CCS na CHAdeMO",
+      "price": 459.99,
+      "category": "Adaptery",
+      "brand": "Universal",
+      "description": "Uniwersalny adapter umożliwiający ładowanie pojazdów z wtyczką CCS na stacjach CHAdeMO. Certyfikowany i bezpieczny.",
+      "imageUrls": [
+        "https://images.unsplash.com/photo-1516824711555-0c40d2ab4c90?q=80&w=800&auto=format&fit=crop",
+        "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?q=80&w=800&auto=format&fit=crop"
+      ],
+      "bestseller": false,
+      "rating": 4.3,
+      "reviews": 45
+    },
+    {
+      "name": "Ładowarka przenośna 3,7kW",
+      "price": 699.99,
+      "category": "Ładowarki",
+      "brand": "Morec",
+      "description": "Kompaktowa ładowarka przenośna z mocą 3,7kW. Idealna do ładowania w podróży. Wtyczka CEE i Schuko w zestawie.",
+      "imageUrls": [
+        "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?q=80&w=800&auto=format&fit=crop",
+        "https://images.unsplash.com/photo-1593941707874-ef8115ba8c88?q=80&w=800&auto=format&fit=crop"
+      ],
+      "bestseller": true,
+      "rating": 4.6,
+      "reviews": 178
+    },
+    {
+      "name": "Stacja szybkiego ładowania 50kW",
+      "price": 15999.99,
+      "category": "Stacje ładowania",
+      "brand": "ABB",
+      "description": "Profesjonalna stacja szybkiego ładowania DC 50kW. Kompatybilna z CCS i CHAdeMO. Idealna do zastosowań komercyjnych.",
+      "imageUrls": [
+        "https://images.unsplash.com/photo-1609280443407-5e9c5d6d4c20?q=80&w=800&auto=format&fit=crop",
+        "https://images.unsplash.com/photo-1593941707874-ef8115ba8c88?q=80&w=800&auto=format&fit=crop"
+      ],
+      "bestseller": false,
+      "rating": 4.9,
+      "reviews": 34
+    },
+    {
+      "name": "Kabel Type 1 na Type 2",
+      "price": 449.99,
+      "category": "Kable",
+      "brand": "Juice",
+      "description": "Kabel adaptacyjny Type 1 na Type 2 o długości 4 metry. Wysokiej jakości materiały, odporność na UV i mróz.",
+      "imageUrls": [
+        "https://images.unsplash.com/photo-1614680024908-9c60f838f7f3?q=80&w=800&auto=format&fit=crop",
+        "https://images.unsplash.com/photo-1609729954389-9e54d0c4a8b4?q=80&w=800&auto=format&fit=crop"
+      ],
+      "bestseller": false,
+      "rating": 4.4,
+      "reviews": 92
+    },
+    {
+      "name": "Adapter Tesla na CCS",
+      "price": 299.99,
+      "category": "Adaptery",
+      "brand": "Tesla",
+      "description": "Oryginalny adapter Tesla na CCS Combo 2. Umożliwia ładowanie Tesli na europejskich stacjach CCS. Kompaktowy i niezawodny.",
+      "imageUrls": [
+        "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?q=80&w=800&auto=format&fit=crop",
+        "https://images.unsplash.com/photo-1516824711555-0c40d2ab4c90?q=80&w=800&auto=format&fit=crop"
+      ],
+      "bestseller": true,
+      "rating": 4.8,
+      "reviews": 256
+    },
+    {
+      "name": "Inteligentna ładowarka WiFi 7,4kW",
+      "price": 1899.99,
+      "category": "Ładowarki",
+      "brand": "Wallbox",
+      "description": "Inteligentna ładowarka domowa z WiFi i aplikacją mobilną. Moc 7,4kW, harmonogram ładowania, monitoring kosztów energii.",
+      "imageUrls": [
+        "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?q=80&w=800&auto=format&fit=crop",
+        "https://images.unsplash.com/photo-1593941707874-ef8115ba8c88?q=80&w=800&auto=format&fit=crop"
+      ],
+      "bestseller": false,
+      "rating": 4.7,
+      "reviews": 134
+    },
+    {
+      "name": "Stacja ładowania podwójna 22kW",
+      "price": 4999.99,
+      "category": "Stacje ładowania",
+      "brand": "ChargePoint",
+      "description": "Podwójna stacja ładowania AC 22kW. Możliwość ładowania dwóch pojazdów jednocześnie. System rozliczania i autoryzacji.",
+      "imageUrls": [
+        "https://images.unsplash.com/photo-1609280443407-5e9c5d6d4c20?q=80&w=800&auto=format&fit=crop",
+        "https://images.unsplash.com/photo-1593941707874-ef8115ba8c88?q=80&w=800&auto=format&fit=crop"
+      ],
+      "bestseller": false,
+      "rating": 4.6,
+      "reviews": 78
+    }
+  ]
+}
