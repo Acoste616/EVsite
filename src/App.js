@@ -191,9 +191,30 @@ const api = {
     }));
   },
   fetchProduct: async (id) => {
-    const docRef = doc(db, 'products', id);
-    const docSnap = await getDoc(docRef);
-    return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } : null;
+    try {
+      // Najpierw sprawdź Firebase
+      const docRef = doc(db, 'products', id);
+      const docSnap = await getDoc(docRef);
+      
+      if (docSnap.exists()) {
+        return { id: docSnap.id, ...docSnap.data() };
+      }
+      
+      // Jeśli nie ma w Firebase, sprawdź sample products
+      const sampleProduct = sampleTeslaProducts.find(p => p.id === id);
+      if (sampleProduct) {
+        console.log('Found sample product:', sampleProduct.name);
+        return sampleProduct;
+      }
+      
+      console.warn('Product not found:', id);
+      return null;
+    } catch (error) {
+      console.warn('Error fetching product, trying sample data:', error);
+      // W przypadku błędu Firebase, sprawdź sample products
+      const sampleProduct = sampleTeslaProducts.find(p => p.id === id);
+      return sampleProduct || null;
+    }
   },
   getReviews: (productId, callback) => {
     const reviewsQuery = query(collection(db, `products/${productId}/reviews`));
@@ -206,14 +227,108 @@ const api = {
     await addDoc(collection(db, `products/${productId}/reviews`), review);
   },
   uploadImage: async (file) => {
-    const storageRef = ref(storage, `products/${Date.now()}_${file.name}`);
-    await uploadBytes(storageRef, file);
-    return await getDownloadURL(storageRef);
+    try {
+      if (!file) {
+        throw new Error('Nie wybrano pliku');
+      }
+      
+      // Walidacja typu pliku
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+      if (!allowedTypes.includes(file.type)) {
+        throw new Error('Nieprawidłowy typ pliku. Dozwolone: JPG, PNG, WEBP');
+      }
+      
+      // Walidacja rozmiaru (max 5MB)
+      const maxSize = 5 * 1024 * 1024; // 5MB
+      if (file.size > maxSize) {
+        throw new Error('Plik jest za duży. Maksymalny rozmiar: 5MB');
+      }
+      
+      const storageRef = ref(storage, `products/${Date.now()}_${file.name}`);
+      console.log('Uploading file:', file.name, 'Size:', file.size, 'Type:', file.type);
+      
+      // Upload z timeout (30 sekund)
+      const uploadWithTimeout = Promise.race([
+        uploadBytes(storageRef, file),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Upload timeout - przekroczono 30 sekund')), 30000)
+        )
+      ]);
+      
+      await uploadWithTimeout;
+      
+      // Download URL z timeout (10 sekund)
+      const urlWithTimeout = Promise.race([
+        getDownloadURL(storageRef),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Timeout pobierania URL')), 10000)
+        )
+      ]);
+      
+      const downloadURL = await urlWithTimeout;
+      
+      console.log('Upload successful, URL:', downloadURL);
+      return downloadURL;
+    } catch (error) {
+      console.error('Upload error:', error);
+      
+      // Lepsze błędy Firebase Storage
+      if (error.code === 'storage/unauthorized') {
+        throw new Error('Brak uprawnień do uploadu. Sprawdź konfigurację Firebase Storage.');
+      } else if (error.code === 'storage/quota-exceeded') {
+        throw new Error('Przekroczono limit miejsca na Firebase Storage.');
+      } else if (error.code === 'storage/invalid-format') {
+        throw new Error('Nieprawidłowy format pliku.');
+      } else if (error.code === 'storage/network-request-failed') {
+        throw new Error('Błąd sieci. Sprawdź połączenie internetowe i spróbuj ponownie.');
+      } else if (error.code === 'storage/retry-limit-exceeded') {
+        throw new Error('Przekroczono limit prób uploadu. Spróbuj ponownie za chwilę.');
+      } else if (error.code === 'storage/timeout') {
+        throw new Error('Przekroczono limit czasu uploadu. Spróbuj z mniejszym plikiem.');
+      } else if (error.message.includes('timeout') || error.message.includes('Timeout')) {
+        throw new Error('Przekroczono limit czasu. Sprawdź połączenie internetowe.');
+      } else if (error.message.includes('Network')) {
+        throw new Error('Błąd sieci. Sprawdź połączenie internetowe.');
+      }
+      
+      // Ogólny błąd z dodatkowym kontekstem
+      throw new Error(`Błąd uploadu: ${error.message || 'Nieznany błąd'}`);
+    }
   },
-  // Funkcje dla admina
-  addProduct: async (product) => addDoc(collection(db, 'products'), product),
-  updateProduct: async (id, product) => updateDoc(doc(db, 'products', id), product),
-  deleteProduct: async (id) => deleteDoc(doc(db, 'products', id)),
+  // Funkcje dla admina z obsługą błędów
+  addProduct: async (product) => {
+    try {
+      return await addDoc(collection(db, 'products'), product);
+    } catch (error) {
+      console.error('Błąd dodawania produktu:', error);
+      if (error.code === 'permission-denied') {
+        throw new Error('Brak uprawnień do dodawania produktów. Skonfiguruj reguły Firebase.');
+      }
+      throw new Error('Nie można dodać produktu. Sprawdź połączenie.');
+    }
+  },
+  updateProduct: async (id, product) => {
+    try {
+      return await updateDoc(doc(db, 'products', id), product);
+    } catch (error) {
+      console.error('Błąd aktualizacji produktu:', error);
+      if (error.code === 'permission-denied') {
+        throw new Error('Brak uprawnień do edycji produktów. Skonfiguruj reguły Firebase.');
+      }
+      throw new Error('Nie można zaktualizować produktu.');
+    }
+  },
+  deleteProduct: async (id) => {
+    try {
+      return await deleteDoc(doc(db, 'products', id));
+    } catch (error) {
+      console.error('Błąd usuwania produktu:', error);
+      if (error.code === 'permission-denied') {
+        throw new Error('Brak uprawnień do usuwania produktów. Skonfiguruj reguły Firebase.');
+      }
+      throw new Error('Nie można usunąć produktu.');
+    }
+  },
   fetchOrders: async () => {
     const ordersCol = collection(db, 'orders');
     const snapshot = await getDocs(ordersCol);
@@ -242,12 +357,28 @@ const PermissionErrorDisplay = ({ message }) => (
 
 const NotificationCenter = ({ notifications }) => (
     <div className="fixed top-24 right-4 z-[100] space-y-2">
-        {notifications.map(n => (
-            <div key={n.id} className={`flex items-center p-4 rounded-lg shadow-lg animate-fade-in-right ${n.type === 'success' ? 'bg-green-600' : 'bg-red-600'} text-white`}>
-                {n.type === 'success' ? <CheckCircle className="mr-2" /> : <AlertCircle className="mr-2" />}
-                {n.message}
-            </div>
-        ))}
+        {(notifications || []).map(n => {
+            let bgColor = 'bg-red-600';
+            let icon = <AlertCircle className="mr-2" />;
+            
+            if (n.type === 'success') {
+                bgColor = 'bg-green-600';
+                icon = <CheckCircle className="mr-2" />;
+            } else if (n.type === 'info') {
+                bgColor = 'bg-blue-600';
+                icon = <AlertCircle className="mr-2" />;
+            } else if (n.type === 'warning') {
+                bgColor = 'bg-yellow-600';
+                icon = <AlertCircle className="mr-2" />;
+            }
+            
+            return (
+                <div key={n.id} className={`flex items-center p-4 rounded-lg shadow-lg animate-fade-in-right ${bgColor} text-white max-w-md`}>
+                    {icon}
+                    <span className="text-sm">{n.message}</span>
+                </div>
+            );
+        })}
     </div>
 );
 
@@ -294,7 +425,7 @@ const Header = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
         <>
             <a onClick={() => navigate('home')} className="cursor-pointer hover:text-blue-400 transition-colors">Strona główna</a>
             <a onClick={() => navigate('category', 'Wszystkie')} className="cursor-pointer hover:text-blue-400 transition-colors">Produkty</a>
-            {categories.slice(0, 3).map(cat => (
+            {(categories || []).slice(0, 3).map(cat => (
                  <a key={cat.name} onClick={() => navigate('category', cat.name)} className="cursor-pointer hover:text-blue-400 transition-colors">{cat.name}</a>
             ))}
         </>
@@ -323,7 +454,7 @@ const Header = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
                                 Produkty
                                 <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-blue-400 transition-all duration-300 group-hover:w-full"></span>
                             </a>
-                            {categories.slice(0, 3).map(cat => (
+                            {(categories || []).slice(0, 3).map(cat => (
                                  <a key={cat.name} onClick={() => navigate('category', cat.name)} className="cursor-pointer hover:text-blue-400 transition-all duration-300 relative group">
                                     {cat.name}
                                     <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-blue-400 transition-all duration-300 group-hover:w-full"></span>
@@ -408,7 +539,7 @@ const Header = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
                             <div className="w-2 h-2 bg-blue-400 rounded-full mr-3 opacity-0 group-hover:opacity-100"></div>
                             Produkty
                         </a>
-                        {categories.slice(0, 3).map(cat => (
+                        {(categories || []).slice(0, 3).map(cat => (
                              <a key={cat.name} onClick={() => navigate('category', cat.name)} className="px-4 py-3 rounded-lg hover:bg-blue-600/20 hover:text-blue-400 cursor-pointer transition-all duration-300 flex items-center">
                                 <div className="w-2 h-2 bg-blue-400 rounded-full mr-3 opacity-0 group-hover:opacity-100"></div>
                                 {cat.name}
@@ -545,18 +676,33 @@ const HomePage = ({ navigate, products, categories }) => {
 
     return (
         <div className="space-y-24 md:space-y-32 pb-24">
-            {/* Hero Section with Enhanced Background */}
+            {/* Hero Section with Spectacular EV Background */}
             <section className="relative h-[85vh] text-white flex items-center justify-center overflow-hidden">
-                {/* Animated background with fallback */}
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-900/20 via-gray-900 to-purple-900/20 z-0"></div>
-                <div className="absolute inset-0 bg-gradient-radial z-5"></div>
+                {/* Dynamic Background Images */}
+                <div className="absolute inset-0 z-0">
+                    <div className="absolute inset-0 bg-gradient-to-br from-blue-900/40 via-gray-900/60 to-purple-900/40 z-10"></div>
+                    <img 
+                        src="https://images.unsplash.com/photo-1617195737496-bc30194e3a19?q=80&w=1920&auto=format&fit=crop"
+                        alt="Tesla Model S charging"
+                        className="absolute inset-0 w-full h-full object-cover animate-fade-in-up"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent z-5"></div>
+                </div>
                 
-                {/* Animated particles background */}
+                {/* Floating EV Icons */}
                 <div className="absolute inset-0 z-5">
-                    <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
-                    <div className="absolute top-1/3 right-1/3 w-1 h-1 bg-purple-400 rounded-full animate-pulse delay-1000"></div>
-                    <div className="absolute bottom-1/4 left-1/3 w-3 h-3 bg-cyan-400 rounded-full animate-pulse delay-2000"></div>
-                    <div className="absolute top-1/2 right-1/4 w-1 h-1 bg-blue-300 rounded-full animate-pulse delay-3000"></div>
+                    <div className="absolute top-1/4 left-1/4 animate-pulse">
+                        <Zap className="w-6 h-6 text-blue-400 animate-bounce" />
+                    </div>
+                    <div className="absolute top-1/3 right-1/3 animate-pulse delay-1000">
+                        <Zap className="w-4 h-4 text-purple-400 animate-bounce" />
+                    </div>
+                    <div className="absolute bottom-1/4 left-1/3 animate-pulse delay-2000">
+                        <Zap className="w-8 h-8 text-cyan-400 animate-bounce" />
+                    </div>
+                    <div className="absolute top-1/2 right-1/4 animate-pulse delay-3000">
+                        <Zap className="w-5 h-5 text-blue-300 animate-bounce" />
+                    </div>
                 </div>
                 
                 {/* Content */}
@@ -620,7 +766,7 @@ const HomePage = ({ navigate, products, categories }) => {
                     Przeglądaj Kategorie
                 </h2>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-8">
-                    {categories.map((category, index) => (
+                    {(categories || []).map((category, index) => (
                         <div 
                             key={category.name} 
                             onClick={() => navigate('category', category.name)} 
@@ -652,7 +798,7 @@ const HomePage = ({ navigate, products, categories }) => {
                     </h2>
                      {bestsellers.length > 0 ? (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-                            {bestsellers.map((product, index) => (
+                            {(bestsellers || []).map((product, index) => (
                                 <div 
                                     key={product.id} 
                                     className="animate-fade-in-up"
@@ -883,7 +1029,26 @@ const ProductPage = ({ navigate, productId }) => {
         return () => unsubscribe();
     }, [productId]);
 
-    if (isLoading || !product) return <LoadingScreen />;
+    if (isLoading) return <LoadingScreen />;
+    
+    if (!product) {
+        return (
+            <div className="bg-gray-900 min-h-screen flex items-center justify-center">
+                <div className="text-center p-8">
+                    <AlertCircle className="h-16 w-16 mx-auto text-red-400 mb-4" />
+                    <h1 className="text-3xl font-bold text-white mb-2">Produkt nie znaleziony</h1>
+                    <p className="text-gray-400 mb-6">Produkt o podanym ID nie istnieje lub został usunięty.</p>
+                    <button 
+                        onClick={() => navigate('home')} 
+                        className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-6 rounded-lg flex items-center mx-auto"
+                    >
+                        <ArrowRight className="h-5 w-5 mr-2 rotate-180" />
+                        Powrót do strony głównej
+                    </button>
+                </div>
+            </div>
+        );
+    }
     
     const relatedProducts = products.filter(p => p.category === product.category && p.id !== product.id).slice(0, 4);
 
@@ -957,7 +1122,7 @@ const CartPage = ({ navigate }) => {
                 <h1 className="text-3xl font-bold mb-8 text-white">Twój Koszyk</h1>
                 <div className="flex flex-col lg:flex-row gap-8">
                     <div className="lg:w-2/3 bg-gray-800 rounded-lg shadow-md p-6 space-y-4 border border-gray-700">
-                        {cart.map(item => (
+                        {(cart || []).map(item => (
                             <div key={item.id} className="flex items-center space-x-4 border-b border-gray-700 pb-4 last:border-b-0">
                                 <img src={item.imageUrls[0]} alt={item.name} className="w-24 h-24 object-cover rounded-md" />
                                 <div className="flex-grow">
@@ -1301,6 +1466,12 @@ const AdminProducts = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingProduct, setEditingProduct] = useState(null);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [selectedCategory, setSelectedCategory] = useState('Wszystkie');
+    const [sortBy, setSortBy] = useState('name');
+    const [sortOrder, setSortOrder] = useState('asc');
+    const [currentPage, setCurrentPage] = useState(1);
+    const [productsPerPage] = useState(10);
     const { addNotification } = useContext(AppContext);
 
     useEffect(() => {
@@ -1311,6 +1482,54 @@ const AdminProducts = () => {
         };
         fetch();
     }, []);
+
+    // Filtrowanie i sortowanie produktów
+    const filteredProducts = products.filter(product => {
+        const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                             product.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                             product.brand.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesCategory = selectedCategory === 'Wszystkie' || product.category === selectedCategory;
+        return matchesSearch && matchesCategory;
+    });
+
+    const sortedProducts = [...filteredProducts].sort((a, b) => {
+        let aValue, bValue;
+        switch (sortBy) {
+            case 'name':
+                aValue = a.name.toLowerCase();
+                bValue = b.name.toLowerCase();
+                break;
+            case 'price':
+                aValue = a.price;
+                bValue = b.price;
+                break;
+            case 'category':
+                aValue = a.category.toLowerCase();
+                bValue = b.category.toLowerCase();
+                break;
+            case 'brand':
+                aValue = a.brand.toLowerCase();
+                bValue = b.brand.toLowerCase();
+                break;
+            default:
+                aValue = a.name.toLowerCase();
+                bValue = b.name.toLowerCase();
+        }
+        
+        if (sortOrder === 'asc') {
+            return aValue > bValue ? 1 : -1;
+        } else {
+            return aValue < bValue ? 1 : -1;
+        }
+    });
+
+    // Paginacja
+    const indexOfLastProduct = currentPage * productsPerPage;
+    const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
+    const currentProducts = sortedProducts.slice(indexOfFirstProduct, indexOfLastProduct);
+    const totalPages = Math.ceil(sortedProducts.length / productsPerPage);
+
+    const categories = ['Wszystkie', 'Ładowarki', 'Adaptery', 'Akcesoria', 'Baterie'];
 
     const handleSave = async (productData) => {
         setIsLoading(true);
@@ -1347,40 +1566,200 @@ const AdminProducts = () => {
         }
     };
     
-    if (isLoading) return <p>Ładowanie produktów...</p>;
+    if (isLoading) return <div className="flex justify-center items-center h-64"><div className="spinner"></div></div>;
     
     return (
         <div>
             <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-white">Produkty</h2>
-                <button onClick={() => { setEditingProduct(null); setIsModalOpen(true); }} className="bg-blue-600 text-white font-bold py-2 px-4 rounded-md hover:bg-blue-500">Dodaj produkt</button>
+                <h2 className="text-2xl font-bold text-white">Produkty ({sortedProducts.length})</h2>
+                <button onClick={() => { setEditingProduct(null); setIsModalOpen(true); }} className="bg-blue-600 text-white font-bold py-2 px-4 rounded-md hover:bg-blue-500 flex items-center">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Dodaj produkt
+                </button>
             </div>
-             <div className="overflow-x-auto bg-gray-800 rounded-lg">
+
+            {/* Filtry i wyszukiwanie */}
+            <div className="bg-gray-800 p-4 rounded-lg mb-6 space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div>
+                        <label className="block text-gray-400 mb-2">Wyszukaj</label>
+                        <div className="relative">
+                            <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                            <input
+                                type="text"
+                                placeholder="Szukaj produktów..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="w-full pl-10 pr-4 py-2 bg-gray-700 border border-gray-600 rounded-md text-white"
+                            />
+                        </div>
+                    </div>
+                    <div>
+                        <label className="block text-gray-400 mb-2">Kategoria</label>
+                        <select
+                            value={selectedCategory}
+                            onChange={(e) => setSelectedCategory(e.target.value)}
+                            className="w-full p-2 bg-gray-700 border border-gray-600 rounded-md text-white"
+                        >
+                            {(categories || ['Wszystkie', 'Ładowarki', 'Adaptery', 'Akcesoria', 'Baterie']).map(cat => (
+                                <option key={cat} value={cat}>{cat}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <div>
+                        <label className="block text-gray-400 mb-2">Sortuj według</label>
+                        <select
+                            value={sortBy}
+                            onChange={(e) => setSortBy(e.target.value)}
+                            className="w-full p-2 bg-gray-700 border border-gray-600 rounded-md text-white"
+                        >
+                            <option value="name">Nazwy</option>
+                            <option value="price">Ceny</option>
+                            <option value="category">Kategorii</option>
+                            <option value="brand">Marki</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label className="block text-gray-400 mb-2">Kierunek</label>
+                        <select
+                            value={sortOrder}
+                            onChange={(e) => setSortOrder(e.target.value)}
+                            className="w-full p-2 bg-gray-700 border border-gray-600 rounded-md text-white"
+                        >
+                            <option value="asc">Rosnąco</option>
+                            <option value="desc">Malejąco</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            {/* Lista produktów */}
+            <div className="overflow-x-auto bg-gray-800 rounded-lg">
                 <table className="w-full text-left text-gray-300">
-                    <thead className="bg-gray-700 text-sm text-gray-400 uppercase"><tr>
-                        <th className="p-3">Nazwa</th><th className="p-3">Kategoria</th><th className="p-3">Cena</th><th className="p-3">Akcje</th>
-                    </tr></thead>
-                    <tbody>{products.map(p => (
-                        <tr key={p.id} className="border-b border-gray-700 hover:bg-gray-700/50">
-                            <td className="p-3 font-medium text-white">{p.name}</td><td className="p-3">{p.category}</td><td className="p-3">{p.price.toFixed(2)} zł</td>
-                            <td className="p-3 space-x-2">
-                                <button onClick={() => { setEditingProduct(p); setIsModalOpen(true); }} className="text-blue-400 hover:underline">Edytuj</button>
-                                <button onClick={() => handleDelete(p.id)} className="text-red-400 hover:underline">Usuń</button>
-                            </td>
+                    <thead className="bg-gray-700 text-sm text-gray-400 uppercase">
+                        <tr>
+                            <th className="p-3">Zdjęcie</th>
+                            <th className="p-3">Nazwa</th>
+                            <th className="p-3">Kategoria</th>
+                            <th className="p-3">Marka</th>
+                            <th className="p-3">Cena</th>
+                            <th className="p-3">Status</th>
+                            <th className="p-3">Akcje</th>
                         </tr>
-                    ))}</tbody>
+                    </thead>
+                    <tbody>
+                        {currentProducts.map(p => (
+                            <tr key={p.id} className="border-b border-gray-700 hover:bg-gray-700/50">
+                                <td className="p-3">
+                                    <img 
+                                        src={p.imageUrls?.[0] || 'https://via.placeholder.com/60x60?text=No+Image'} 
+                                        alt={p.name}
+                                        className="w-12 h-12 object-cover rounded"
+                                    />
+                                </td>
+                                <td className="p-3 font-medium text-white">{p.name}</td>
+                                <td className="p-3">{p.category}</td>
+                                <td className="p-3">{p.brand}</td>
+                                <td className="p-3 font-bold text-green-400">{p.price?.toFixed(2)} zł</td>
+                                <td className="p-3">
+                                    {p.bestseller && (
+                                        <span className="bg-yellow-600 text-white px-2 py-1 rounded-full text-xs">
+                                            Bestseller
+                                        </span>
+                                    )}
+                                </td>
+                                <td className="p-3 space-x-2">
+                                    <button 
+                                        onClick={() => { setEditingProduct(p); setIsModalOpen(true); }} 
+                                        className="text-blue-400 hover:underline p-1"
+                                        title="Edytuj"
+                                    >
+                                        <Eye className="h-4 w-4" />
+                                    </button>
+                                    <button 
+                                        onClick={() => handleDelete(p.id)} 
+                                        className="text-red-400 hover:underline p-1"
+                                        title="Usuń"
+                                    >
+                                        <Trash2 className="h-4 w-4" />
+                                    </button>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
                 </table>
             </div>
+
+            {/* Paginacja */}
+            {totalPages > 1 && (
+                <div className="flex justify-center items-center space-x-2 mt-6">
+                    <button
+                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                        disabled={currentPage === 1}
+                        className="px-3 py-2 bg-gray-700 text-white rounded-md hover:bg-gray-600 disabled:opacity-50"
+                    >
+                        Poprzednia
+                    </button>
+                    <span className="text-white">
+                        Strona {currentPage} z {totalPages}
+                    </span>
+                    <button
+                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                        disabled={currentPage === totalPages}
+                        className="px-3 py-2 bg-gray-700 text-white rounded-md hover:bg-gray-600 disabled:opacity-50"
+                    >
+                        Następna
+                    </button>
+                </div>
+            )}
+
             {isModalOpen && <ProductEditModal product={editingProduct} onSave={handleSave} onClose={() => setIsModalOpen(false)} />}
         </div>
     );
 };
 
 const ProductEditModal = ({ product, onSave, onClose }) => {
-    const [formData, setFormData] = useState(
-        product || { name: '', price: 0, category: 'Ładowarki', brand: '', description: '', imageUrls: [], bestseller: false, rating: 0 }
-    );
+    const [formData, setFormData] = useState(() => {
+        if (product) {
+            return {
+                name: product.name || '',
+                price: product.price || 0,
+                category: product.category || 'Ładowarki',
+                brand: product.brand || '',
+                description: product.description || '',
+                imageUrls: product.imageUrls || [],
+                bestseller: product.bestseller || false,
+                rating: product.rating || 0,
+                tags: product.tags || [],
+                shortDescription: product.shortDescription || '',
+                features: product.features || [],
+                specifications: product.specifications || '',
+                warranty: product.warranty || '',
+                inStock: product.inStock !== undefined ? product.inStock : true,
+                stockQuantity: product.stockQuantity || 0
+            };
+        }
+        return { 
+            name: '', 
+            price: 0, 
+            category: 'Ładowarki', 
+            brand: '', 
+            description: '', 
+            imageUrls: [], 
+            bestseller: false, 
+            rating: 0,
+            tags: [],
+            shortDescription: '',
+            features: [],
+            specifications: '',
+            warranty: '',
+            inStock: true,
+            stockQuantity: 0
+        };
+    });
     const [isUploading, setIsUploading] = useState(false);
+    const [newTag, setNewTag] = useState('');
+    const [newFeature, setNewFeature] = useState('');
     const { addNotification, categories } = useContext(AppContext);
 
     const handleChange = (e) => {
@@ -1394,21 +1773,148 @@ const ProductEditModal = ({ product, onSave, onClose }) => {
 
     const handleImageUpload = async (e) => {
         const file = e.target.files[0];
-        if (!file) return;
+        if (!file) {
+            addNotification('Nie wybrano pliku', 'error');
+            return;
+        }
+        
+        console.log('=== UPLOAD START ===');
+        console.log('File name:', file.name);
+        console.log('File size:', file.size, 'bytes');
+        console.log('File type:', file.type);
+        console.log('FormData imageUrls before:', formData.imageUrls?.length || 0);
+        
         setIsUploading(true);
+        
         try {
+            addNotification('Rozpoczynam upload...', 'info');
+            console.log('Calling api.uploadImage...');
+            
             const url = await api.uploadImage(file);
-            setFormData(prev => ({ ...prev, imageUrls: [...prev.imageUrls, url] }));
-            addNotification('Zdjęcie dodane.');
+            console.log('Upload successful! URL:', url);
+            
+            setFormData(prev => {
+                const newUrls = [...(prev.imageUrls || []), url];
+                console.log('Updated imageUrls:', newUrls);
+                return { ...prev, imageUrls: newUrls };
+            });
+            
+            addNotification(`Zdjęcie "${file.name}" zostało dodane pomyślnie!`, 'success');
+            
+            // Wyczyść input
+            e.target.value = '';
+            console.log('=== UPLOAD SUCCESS ===');
+            
         } catch (error) {
-            addNotification('Błąd uploadu zdjęcia.', 'error');
+            console.error('=== UPLOAD ERROR ===');
+            console.error('Error object:', error);
+            console.error('Error message:', error.message);
+            console.error('Error stack:', error.stack);
+            
+            // Tryb offline - użyj placeholder obrazów
+            if (error.message.includes('network') || error.message.includes('timeout') || error.message.includes('Firebase') || error.message.includes('Storage')) {
+                console.log('Trying offline mode with placeholder...');
+                const placeholderUrl = `https://via.placeholder.com/800x600/3B82F6/FFFFFF?text=${encodeURIComponent(file.name)}`;
+                
+                setFormData(prev => {
+                    const newUrls = [...(prev.imageUrls || []), placeholderUrl];
+                    console.log('Added placeholder URL:', placeholderUrl);
+                    return { ...prev, imageUrls: newUrls };
+                });
+                
+                addNotification(`Dodano placeholder dla "${file.name}" (tryb offline)`, 'warning');
+                e.target.value = '';
+                return;
+            }
+            
+            const errorMessage = error.message || 'Nieznany błąd uploadu';
+            addNotification(`Błąd uploadu: ${errorMessage}`, 'error');
         } finally {
+            console.log('Setting isUploading to false');
             setIsUploading(false);
         }
+    };
+
+    const handleImageDelete = (indexToDelete) => {
+        setFormData(prev => ({
+            ...prev,
+            imageUrls: prev.imageUrls.filter((_, index) => index !== indexToDelete)
+        }));
+        addNotification('Zdjęcie usunięte.');
+    };
+
+    const handleAddTag = () => {
+        if (newTag.trim() && !(formData.tags || []).includes(newTag.trim())) {
+            setFormData(prev => ({
+                ...prev,
+                tags: [...(prev.tags || []), newTag.trim()]
+            }));
+            setNewTag('');
+            addNotification('Tag dodany.');
+        }
+    };
+
+    const handleRemoveTag = (tagToRemove) => {
+        setFormData(prev => ({
+            ...prev,
+            tags: (prev.tags || []).filter(tag => tag !== tagToRemove)
+        }));
+        addNotification('Tag usunięty.');
+    };
+
+    const handleAddFeature = () => {
+        if (newFeature.trim() && !(formData.features || []).includes(newFeature.trim())) {
+            setFormData(prev => ({
+                ...prev,
+                features: [...(prev.features || []), newFeature.trim()]
+            }));
+            setNewFeature('');
+            addNotification('Cecha dodana.');
+        }
+    };
+
+    const handleRemoveFeature = (featureToRemove) => {
+        setFormData(prev => ({
+            ...prev,
+            features: (prev.features || []).filter(feature => feature !== featureToRemove)
+        }));
+        addNotification('Cecha usunięta.');
     };
     
     const handleSubmit = (e) => {
         e.preventDefault();
+        
+        // Rozszerzona walidacja formularza
+        if (!formData.name?.trim()) {
+            addNotification('Nazwa produktu jest wymagana', 'error');
+            return;
+        }
+        
+        if (formData.price <= 0) {
+            addNotification('Cena musi być większa od 0', 'error');
+            return;
+        }
+        
+        if (!formData.description?.trim()) {
+            addNotification('Opis produktu jest wymagany', 'error');
+            return;
+        }
+        
+        if (!formData.shortDescription?.trim()) {
+            addNotification('Krótki opis produktu jest wymagany', 'error');
+            return;
+        }
+        
+        if (!formData.brand?.trim()) {
+            addNotification('Marka produktu jest wymagana', 'error');
+            return;
+        }
+        
+        if ((formData.imageUrls || []).length === 0) {
+            addNotification('Dodaj przynajmniej jedno zdjęcie produktu', 'error');
+            return;
+        }
+        
         onSave(formData);
     };
 
@@ -1416,26 +1922,211 @@ const ProductEditModal = ({ product, onSave, onClose }) => {
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
             <div className="bg-gray-800 p-8 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-gray-700">
                 <h2 className="text-2xl font-bold mb-6 text-white">{product ? 'Edytuj produkt' : 'Dodaj produkt'}</h2>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <input name="name" value={formData.name} onChange={handleChange} placeholder="Nazwa produktu" className="w-full p-2 border rounded bg-gray-700 border-gray-600 text-white" required />
-                    <input name="price" type="number" step="0.01" value={formData.price} onChange={handlePriceChange} placeholder="Cena" className="w-full p-2 border rounded bg-gray-700 border-gray-600 text-white" required />
-                    <select name="category" value={formData.category} onChange={handleChange} className="w-full p-2 border rounded bg-gray-700 border-gray-600 text-white">
-                        {categories.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
-                    </select>
-                    <input name="brand" value={formData.brand} onChange={handleChange} placeholder="Marka" className="w-full p-2 border rounded bg-gray-700 border-gray-600 text-white" />
-                    <textarea name="description" value={formData.description} onChange={handleChange} placeholder="Opis" className="w-full p-2 border rounded h-32 bg-gray-700 border-gray-600 text-white"></textarea>
+                <form onSubmit={handleSubmit} className="space-y-6">
+                    {/* Podstawowe informacje */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-gray-400 mb-2">Nazwa produktu *</label>
+                            <input name="name" value={formData.name} onChange={handleChange} placeholder="Tesla Wall Connector Gen 3" className="w-full p-3 border rounded bg-gray-700 border-gray-600 text-white" required />
+                        </div>
+                        <div>
+                            <label className="block text-gray-400 mb-2">Marka *</label>
+                            <input name="brand" value={formData.brand} onChange={handleChange} placeholder="Tesla" className="w-full p-3 border rounded bg-gray-700 border-gray-600 text-white" required />
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-gray-400 mb-2">Cena (zł) *</label>
+                            <input name="price" type="number" step="0.01" value={formData.price} onChange={handlePriceChange} placeholder="2499.00" className="w-full p-3 border rounded bg-gray-700 border-gray-600 text-white" required />
+                        </div>
+                        <div>
+                            <label className="block text-gray-400 mb-2">Kategoria *</label>
+                            <select name="category" value={formData.category} onChange={handleChange} className="w-full p-3 border rounded bg-gray-700 border-gray-600 text-white">
+                                {categories?.map(c => <option key={c.name} value={c.name}>{c.name}</option>) || 
+                                 ['Ładowarki', 'Adaptery', 'Akcesoria', 'Baterie'].map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-gray-400 mb-2">Krótki opis *</label>
+                        <input name="shortDescription" value={formData.shortDescription} onChange={handleChange} placeholder="Najszybsza ładowarka domowa Tesla z mocą do 11.5 kW" className="w-full p-3 border rounded bg-gray-700 border-gray-600 text-white" required />
+                    </div>
+
+                    <div>
+                        <label className="block text-gray-400 mb-2">Pełny opis *</label>
+                        <textarea name="description" value={formData.description} onChange={handleChange} placeholder="Szczegółowy opis produktu..." className="w-full p-3 border rounded h-32 bg-gray-700 border-gray-600 text-white" required></textarea>
+                    </div>
+
+                    {/* Specyfikacje i gwarancja */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-gray-400 mb-2">Specyfikacje techniczne</label>
+                            <textarea name="specifications" value={formData.specifications} onChange={handleChange} placeholder="Moc: 11.5 kW&#10;Napięcie: 230V&#10;Kabel: 5.5m" className="w-full p-3 border rounded h-24 bg-gray-700 border-gray-600 text-white"></textarea>
+                        </div>
+                        <div>
+                            <label className="block text-gray-400 mb-2">Gwarancja</label>
+                            <input name="warranty" value={formData.warranty} onChange={handleChange} placeholder="2 lata" className="w-full p-3 border rounded bg-gray-700 border-gray-600 text-white" />
+                        </div>
+                    </div>
+
+                    {/* Stan magazynowy */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="flex items-center">
+                            <input type="checkbox" id="inStock" name="inStock" checked={formData.inStock} onChange={handleChange} className="h-4 w-4 text-blue-600 bg-gray-700 border-gray-600 rounded" />
+                            <label htmlFor="inStock" className="ml-2 text-white">Dostępny w magazynie</label>
+                        </div>
+                        <div>
+                            <label className="block text-gray-400 mb-2">Ilość w magazynie</label>
+                            <input name="stockQuantity" type="number" value={formData.stockQuantity} onChange={handleChange} placeholder="10" className="w-full p-3 border rounded bg-gray-700 border-gray-600 text-white" />
+                        </div>
+                    </div>
+
                     <div className="flex items-center">
                         <input type="checkbox" id="bestseller" name="bestseller" checked={formData.bestseller} onChange={handleChange} className="h-4 w-4 text-blue-600 bg-gray-700 border-gray-600 rounded" />
-                        <label htmlFor="bestseller" className="ml-2 text-white">Bestseller</label>
+                        <label htmlFor="bestseller" className="ml-2 text-white">Oznacz jako bestseller</label>
                     </div>
-                    <div className="mb-4">
-                        <label className="block text-gray-400 mb-2">Zdjęcia</label>
-                        <div className="grid grid-cols-4 gap-2 mb-2">
-                            {formData.imageUrls.map(url => <img key={url} src={url} className="w-full h-16 object-cover rounded" />)}
+                    {/* Zarządzanie zdjęciami */}
+                    <div className="mb-6">
+                        <label className="block text-gray-400 mb-2">Zdjęcia produktu *</label>
+                        
+                        {/* Podgląd zdjęć */}
+                        <div className="grid grid-cols-4 gap-2 mb-4">
+                            {(formData.imageUrls || []).map((url, index) => (
+                                <div key={url} className="relative group">
+                                    <img 
+                                        src={url} 
+                                        alt={`Zdjęcie ${index + 1}`}
+                                        className="w-full h-20 object-cover rounded border border-gray-600" 
+                                        onError={(e) => {
+                                            e.target.style.display = 'none';
+                                        }}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => handleImageDelete(index)}
+                                        className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                                        title="Usuń zdjęcie"
+                                    >
+                                        <Trash2 className="h-3 w-3" />
+                                    </button>
+                                    <div className="absolute bottom-1 left-1 bg-black/70 text-white text-xs px-1 rounded">
+                                        {index + 1}
+                                    </div>
+                                </div>
+                            ))}
                         </div>
-                        <input type="file" onChange={handleImageUpload} className="text-white" />
-                        {isUploading && <p className="text-blue-400">Przesyłanie...</p>}
+                        
+                        {/* Upload input */}
+                        <div className="flex items-center space-x-4">
+                            <div className="flex-1">
+                                <input 
+                                    type="file" 
+                                    onChange={handleImageUpload} 
+                                    className="block w-full text-sm text-gray-400 
+                                               file:mr-4 file:py-2 file:px-4 
+                                               file:rounded-full file:border-0 
+                                               file:text-sm file:font-semibold 
+                                               file:bg-blue-600 file:text-white 
+                                               hover:file:bg-blue-500 file:cursor-pointer"
+                                    accept="image/jpeg,image/jpg,image/png,image/webp"
+                                    disabled={isUploading}
+                                />
+                                <p className="text-xs text-gray-500 mt-1">
+                                    Dozwolone: JPG, PNG, WEBP (max 5MB)
+                                </p>
+                            </div>
+                            
+                            {isUploading && (
+                                <div className="flex items-center space-x-2">
+                                    <div className="spinner"></div>
+                                    <span className="text-blue-400">Przesyłanie...</span>
+                                </div>
+                            )}
+                        </div>
+                        
+                        {/* Info o zdjęciach */}
+                        <div className="mt-2 text-sm text-gray-500">
+                            Dodano: {(formData.imageUrls || []).length} zdjęć
+                            {(formData.imageUrls || []).length === 0 && (
+                                <span className="text-red-400 ml-2">- Wymagane minimum 1 zdjęcie</span>
+                            )}
+                        </div>
                     </div>
+
+                    {/* Tagi */}
+                    <div>
+                        <label className="block text-gray-400 mb-2">Tagi</label>
+                        <div className="flex flex-wrap gap-2 mb-2">
+                            {(formData.tags || []).map((tag, index) => (
+                                <span key={index} className="bg-blue-600 text-white px-3 py-1 rounded-full text-sm flex items-center">
+                                    {tag}
+                                    <button
+                                        type="button"
+                                        onClick={() => handleRemoveTag(tag)}
+                                        className="ml-2 text-blue-200 hover:text-white"
+                                    >
+                                        <X className="h-3 w-3" />
+                                    </button>
+                                </span>
+                            ))}
+                        </div>
+                        <div className="flex gap-2">
+                            <input
+                                type="text"
+                                value={newTag}
+                                onChange={(e) => setNewTag(e.target.value)}
+                                placeholder="Dodaj tag (np. szybkie ładowanie)"
+                                className="flex-1 p-2 border rounded bg-gray-700 border-gray-600 text-white"
+                                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddTag())}
+                            />
+                            <button
+                                type="button"
+                                onClick={handleAddTag}
+                                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-500"
+                            >
+                                <Plus className="h-4 w-4" />
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Cechy produktu */}
+                    <div>
+                        <label className="block text-gray-400 mb-2">Cechy produktu</label>
+                        <div className="space-y-2 mb-2">
+                            {(formData.features || []).map((feature, index) => (
+                                <div key={index} className="flex items-center justify-between bg-gray-700 p-2 rounded">
+                                    <span className="text-white">{feature}</span>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleRemoveFeature(feature)}
+                                        className="text-red-400 hover:text-red-300"
+                                    >
+                                        <Trash2 className="h-4 w-4" />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="flex gap-2">
+                            <input
+                                type="text"
+                                value={newFeature}
+                                onChange={(e) => setNewFeature(e.target.value)}
+                                placeholder="Dodaj cechę (np. Wodoodporność IP54)"
+                                className="flex-1 p-2 border rounded bg-gray-700 border-gray-600 text-white"
+                                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddFeature())}
+                            />
+                            <button
+                                type="button"
+                                onClick={handleAddFeature}
+                                className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-500"
+                            >
+                                <Plus className="h-4 w-4" />
+                            </button>
+                        </div>
+                    </div>
+
                     <div className="flex justify-end space-x-4 mt-6">
                         <button type="button" onClick={onClose} className="bg-gray-600 text-white font-bold py-2 px-4 rounded hover:bg-gray-500">Anuluj</button>
                         <button type="submit" className="bg-blue-600 text-white font-bold py-2 px-4 rounded hover:bg-blue-500">Zapisz</button>
@@ -1502,7 +2193,24 @@ const AdminOrders = () => {
 export default function App() {
     const [page, setPage] = useState('home');
     const [pageData, setPageData] = useState(null);
-    const [cart, setCart] = useState(() => JSON.parse(localStorage.getItem('cart')) || []);
+    const [cart, setCart] = useState(() => {
+        try {
+            const savedCart = localStorage.getItem('cart');
+            if (savedCart) {
+                const parsedCart = JSON.parse(savedCart);
+                // Waliduj czy to jest prawidłowa tablica
+                if (Array.isArray(parsedCart)) {
+                    return parsedCart;
+                }
+            }
+            return [];
+        } catch (error) {
+            console.warn('Błąd odczytu koszyka z localStorage:', error);
+            // Wyczyść uszkodzone dane
+            localStorage.removeItem('cart');
+            return [];
+        }
+    });
     const [products, setProducts] = useState([]);
     const [categories, setCategories] = useState([]);
     const [user, setUser] = useState(null);
@@ -1553,7 +2261,13 @@ export default function App() {
     }, []);
 
     useEffect(() => {
-        localStorage.setItem('cart', JSON.stringify(cart));
+        try {
+            if (Array.isArray(cart)) {
+                localStorage.setItem('cart', JSON.stringify(cart));
+            }
+        } catch (error) {
+            console.warn('Błąd zapisu koszyka do localStorage:', error);
+        }
     }, [cart]);
 
     const addNotification = (message, type = 'success') => {
