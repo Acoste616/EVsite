@@ -252,12 +252,39 @@ const NotificationCenter = ({ notifications }) => (
 );
 
 const LoadingScreen = () => (
-    <div className="fixed inset-0 bg-gray-900 flex flex-col items-center justify-center z-[100]">
-        <div className="flex items-center space-x-3">
-            <Zap className="h-12 w-12 text-blue-500 animate-pulse" />
-            <span className="text-3xl font-bold text-white">EV Akcesoria</span>
+    <div className="fixed inset-0 bg-gradient-to-br from-gray-900 via-blue-900/20 to-purple-900/20 flex flex-col items-center justify-center z-[100]">
+        <div className="relative">
+            {/* Animated background circles */}
+            <div className="absolute -top-8 -left-8 w-16 h-16 bg-blue-500/20 rounded-full animate-pulse"></div>
+            <div className="absolute -bottom-8 -right-8 w-12 h-12 bg-purple-500/20 rounded-full animate-pulse delay-1000"></div>
+            
+            {/* Main content */}
+            <div className="flex items-center space-x-3 animate-fade-in-up">
+                <div className="relative">
+                    <Zap className="h-12 w-12 text-blue-500 animate-pulse" />
+                    <div className="absolute inset-0 animate-ping">
+                        <Zap className="h-12 w-12 text-blue-400 opacity-20" />
+                    </div>
+                </div>
+                <span className="text-3xl font-bold text-gradient">EV Akcesoria</span>
+            </div>
         </div>
-        <p className="text-gray-400 mt-4">Ładowanie przyszłości...</p>
+        
+        <div className="mt-8 animate-fade-in-up delay-300">
+            <p className="text-gray-400 text-lg mb-4">Ładowanie przyszłości...</p>
+            
+            {/* Loading bar */}
+            <div className="w-64 h-2 bg-gray-800 rounded-full overflow-hidden">
+                <div className="h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full animate-pulse"></div>
+            </div>
+        </div>
+        
+        {/* Floating particles */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            <div className="absolute top-1/4 left-1/4 w-1 h-1 bg-blue-400 rounded-full animate-bounce delay-1000"></div>
+            <div className="absolute top-1/3 right-1/3 w-2 h-2 bg-purple-400 rounded-full animate-bounce delay-2000"></div>
+            <div className="absolute bottom-1/4 left-1/3 w-1 h-1 bg-cyan-400 rounded-full animate-bounce delay-3000"></div>
+        </div>
     </div>
 );
 
@@ -274,40 +301,91 @@ const Header = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
     );
 
     return (
-        <header className="bg-gray-900/70 backdrop-blur-lg border-b border-gray-700/50 fixed top-0 left-0 right-0 z-50">
+        <header className="glass-effect border-b border-gray-700/50 fixed top-0 left-0 right-0 z-50 animate-slide-in-down">
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex items-center justify-between h-20">
                     <div className="flex-shrink-0">
-                        <a onClick={() => navigate('home')} className="flex items-center space-x-2 cursor-pointer">
-                            <Zap className="h-8 w-8 text-blue-500" />
-                            <span className="text-2xl font-bold text-white">EV Akcesoria</span>
+                        <a onClick={() => navigate('home')} className="flex items-center space-x-2 cursor-pointer group">
+                            <div className="relative">
+                                <Zap className="h-8 w-8 text-blue-500 transition-all duration-300 group-hover:text-blue-400 group-hover:scale-110" />
+                                <div className="absolute inset-0 bg-blue-500/20 rounded-full scale-0 group-hover:scale-150 transition-transform duration-300"></div>
+                            </div>
+                            <span className="text-2xl font-bold text-gradient group-hover:scale-105 transition-transform duration-300">EV Akcesoria</span>
                         </a>
                     </div>
                     <nav className="hidden md:flex md:space-x-8 items-center text-lg font-medium text-gray-300">
-                        {navLinks}
+                        <div className="flex space-x-8">
+                            <a onClick={() => navigate('home')} className="cursor-pointer hover:text-blue-400 transition-all duration-300 relative group">
+                                Strona główna
+                                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-blue-400 transition-all duration-300 group-hover:w-full"></span>
+                            </a>
+                            <a onClick={() => navigate('category', 'Wszystkie')} className="cursor-pointer hover:text-blue-400 transition-all duration-300 relative group">
+                                Produkty
+                                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-blue-400 transition-all duration-300 group-hover:w-full"></span>
+                            </a>
+                            {categories.slice(0, 3).map(cat => (
+                                 <a key={cat.name} onClick={() => navigate('category', cat.name)} className="cursor-pointer hover:text-blue-400 transition-all duration-300 relative group">
+                                    {cat.name}
+                                    <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-blue-400 transition-all duration-300 group-hover:w-full"></span>
+                                </a>
+                            ))}
+                        </div>
                     </nav>
                     <div className="flex items-center space-x-4">
                         <a onClick={() => navigate('cart')} className="relative cursor-pointer group">
-                            <ShoppingCart className="h-7 w-7 text-gray-400 group-hover:text-blue-400 transition-colors" />
+                            <div className="relative">
+                                <ShoppingCart className="h-7 w-7 text-gray-400 group-hover:text-blue-400 transition-all duration-300 group-hover:scale-110" />
+                                <div className="absolute inset-0 bg-blue-400/20 rounded-full scale-0 group-hover:scale-150 transition-transform duration-300"></div>
+                            </div>
                             {cartItemCount > 0 && (
-                                <span className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center animate-pulse">{cartItemCount}</span>
+                                <span className="absolute -top-2 -right-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center animate-bounce font-bold shadow-lg">
+                                    {cartItemCount}
+                                </span>
                             )}
                         </a>
                         <div className="relative group">
                              <a onClick={() => user ? null : navigate('login')} className="cursor-pointer">
-                                <User className="h-7 w-7 text-gray-400 group-hover:text-blue-400 transition-colors" />
+                                <div className="relative">
+                                    <User className="h-7 w-7 text-gray-400 group-hover:text-blue-400 transition-all duration-300 group-hover:scale-110" />
+                                    <div className="absolute inset-0 bg-blue-400/20 rounded-full scale-0 group-hover:scale-150 transition-transform duration-300"></div>
+                                    {user && (
+                                        <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+                                    )}
+                                </div>
                             </a>
                             {user ? (
-                                <div className="absolute right-0 mt-2 w-56 bg-gray-800 border border-gray-700 rounded-md shadow-lg py-1 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                    <p className="px-4 py-2 text-sm text-gray-400 border-b border-gray-700">Zalogowano jako:</p>
-                                    <p className="px-4 pt-1 pb-2 text-sm text-white truncate">{user.email}</p>
-                                    {userRole === 'admin' && <a onClick={() => navigate('admin')} className="flex items-center w-full px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 cursor-pointer"><Settings className="w-4 h-4 mr-2" />Panel Admina</a>}
-                                    <a onClick={handleLogout} className="flex items-center w-full px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 cursor-pointer"><LogOut className="w-4 h-4 mr-2" />Wyloguj</a>
+                                <div className="absolute right-0 mt-2 w-56 glass-effect border border-gray-700 rounded-lg shadow-xl py-2 z-20 opacity-0 group-hover:opacity-100 transition-all duration-300 transform scale-95 group-hover:scale-100">
+                                    <div className="px-4 py-2 border-b border-gray-700/50">
+                                        <p className="text-xs text-gray-400">Zalogowano jako:</p>
+                                        <p className="text-sm text-white truncate font-medium">{user.email}</p>
+                                        {userRole === 'admin' && (
+                                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-600/20 text-blue-400 border border-blue-600/30 mt-1">
+                                                <Settings className="w-3 h-3 mr-1" />
+                                                Administrator
+                                            </span>
+                                        )}
+                                    </div>
+                                    {userRole === 'admin' && (
+                                        <a onClick={() => navigate('admin')} className="flex items-center w-full px-4 py-2 text-sm text-gray-300 hover:bg-blue-600/20 hover:text-blue-400 cursor-pointer transition-colors">
+                                            <Settings className="w-4 h-4 mr-3" />
+                                            Panel Admina
+                                        </a>
+                                    )}
+                                    <a onClick={handleLogout} className="flex items-center w-full px-4 py-2 text-sm text-gray-300 hover:bg-red-600/20 hover:text-red-400 cursor-pointer transition-colors">
+                                        <LogOut className="w-4 h-4 mr-3" />
+                                        Wyloguj
+                                    </a>
                                 </div>
                             ) : (
-                                <div className="absolute right-0 mt-2 w-48 bg-gray-800 border border-gray-700 rounded-md shadow-lg py-1 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                    <a onClick={() => navigate('login')} className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 cursor-pointer">Zaloguj się</a>
-                                    <a onClick={() => navigate('register')} className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 cursor-pointer">Zarejestruj się</a>
+                                <div className="absolute right-0 mt-2 w-48 glass-effect border border-gray-700 rounded-lg shadow-xl py-2 z-20 opacity-0 group-hover:opacity-100 transition-all duration-300 transform scale-95 group-hover:scale-100">
+                                    <a onClick={() => navigate('login')} className="flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-blue-600/20 hover:text-blue-400 cursor-pointer transition-colors">
+                                        <User className="w-4 h-4 mr-3" />
+                                        Zaloguj się
+                                    </a>
+                                    <a onClick={() => navigate('register')} className="flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-green-600/20 hover:text-green-400 cursor-pointer transition-colors">
+                                        <User className="w-4 h-4 mr-3" />
+                                        Zarejestruj się
+                                    </a>
                                 </div>
                             )}
                         </div>
@@ -320,9 +398,22 @@ const Header = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
                 </div>
             </div>
             {isMobileMenuOpen && (
-                <div className="md:hidden bg-gray-900 shadow-lg border-t border-gray-700">
-                    <nav className="flex flex-col space-y-4 p-4 text-center text-gray-300">
-                        {navLinks}
+                <div className="md:hidden glass-effect shadow-xl border-t border-gray-700/50 animate-slide-in-down">
+                    <nav className="flex flex-col space-y-2 p-4 text-gray-300">
+                        <a onClick={() => navigate('home')} className="px-4 py-3 rounded-lg hover:bg-blue-600/20 hover:text-blue-400 cursor-pointer transition-all duration-300 flex items-center">
+                            <div className="w-2 h-2 bg-blue-400 rounded-full mr-3 opacity-0 group-hover:opacity-100"></div>
+                            Strona główna
+                        </a>
+                        <a onClick={() => navigate('category', 'Wszystkie')} className="px-4 py-3 rounded-lg hover:bg-blue-600/20 hover:text-blue-400 cursor-pointer transition-all duration-300 flex items-center">
+                            <div className="w-2 h-2 bg-blue-400 rounded-full mr-3 opacity-0 group-hover:opacity-100"></div>
+                            Produkty
+                        </a>
+                        {categories.slice(0, 3).map(cat => (
+                             <a key={cat.name} onClick={() => navigate('category', cat.name)} className="px-4 py-3 rounded-lg hover:bg-blue-600/20 hover:text-blue-400 cursor-pointer transition-all duration-300 flex items-center">
+                                <div className="w-2 h-2 bg-blue-400 rounded-full mr-3 opacity-0 group-hover:opacity-100"></div>
+                                {cat.name}
+                            </a>
+                        ))}
                     </nav>
                 </div>
             )}
@@ -373,25 +464,75 @@ const Footer = () => (
 const ProductCard = ({ product, navigate }) => {
     const { addToCart } = useContext(AppContext);
     return (
-        <div className="bg-gray-800 border border-gray-700 rounded-lg shadow-lg overflow-hidden group transition-all duration-300 hover:shadow-blue-500/20 hover:border-blue-800/50 transform hover:-translate-y-2">
+        <div className="bg-gray-800 border border-gray-700 rounded-lg shadow-lg overflow-hidden group card-hover glass-effect">
             <div className="relative">
-                <img src={product.imageUrls && product.imageUrls[0] ? product.imageUrls[0] : 'https://placehold.co/600x600/111827/ffffff?text=Brak+zdjęcia'} alt={product.name} className="w-full h-64 object-cover" />
-                <div className="absolute top-0 right-0 bg-blue-600 text-white px-3 py-1 m-2 rounded-full text-sm font-semibold">
+                <img 
+                    src={product.imageUrls && product.imageUrls[0] ? product.imageUrls[0] : 'https://placehold.co/600x600/111827/ffffff?text=Brak+zdjęcia'} 
+                    alt={product.name} 
+                    className="w-full h-64 object-cover transition-transform duration-300 group-hover:scale-105" 
+                />
+                
+                {/* Category Badge */}
+                <div className="absolute top-0 right-0 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-3 py-1 m-2 rounded-full text-sm font-semibold shadow-lg">
                     {product.category}
                 </div>
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                <div className="absolute bottom-4 left-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex justify-center space-x-2">
-                    <button onClick={(e) => { e.stopPropagation(); addToCart(product); }} className="bg-blue-600 text-white font-bold py-2 px-4 rounded-full hover:bg-blue-500 flex-1">Do koszyka</button>
-                    <button onClick={() => navigate('product', product.id)} className="bg-gray-200/80 text-gray-900 font-bold p-2 rounded-full hover:bg-white"><Eye /></button>
+                
+                {/* Bestseller Badge */}
+                {product.bestseller && (
+                    <div className="absolute top-0 left-0 bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-3 py-1 m-2 rounded-full text-sm font-semibold shadow-lg flex items-center">
+                        <Star className="h-3 w-3 mr-1" fill="currentColor" />
+                        Bestseller
+                    </div>
+                )}
+
+                {/* Hover Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300"></div>
+                
+                {/* Action Buttons */}
+                <div className="absolute bottom-4 left-4 right-4 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-4 group-hover:translate-y-0 flex justify-center space-x-2">
+                    <button 
+                        onClick={(e) => { e.stopPropagation(); addToCart(product); }} 
+                        className="bg-blue-600 text-white font-bold py-2 px-4 rounded-full hover:bg-blue-500 flex-1 btn-glow flex items-center justify-center"
+                    >
+                        <ShoppingCart className="h-4 w-4 mr-2" />
+                        Do koszyka
+                    </button>
+                    <button 
+                        onClick={() => navigate('product', product.id)} 
+                        className="bg-white/20 backdrop-blur-sm text-white font-bold p-2 rounded-full hover:bg-white/30 transition-all"
+                    >
+                        <Eye className="h-5 w-5" />
+                    </button>
                 </div>
             </div>
+            
             <div className="p-4 cursor-pointer" onClick={() => navigate('product', product.id)}>
-                <h3 className="text-lg font-semibold truncate text-white">{product.name}</h3>
-                <div className="flex items-center justify-between mt-2">
-                    <p className="text-xl font-bold text-blue-400">{product.price.toFixed(2)} zł</p>
+                <h3 className="text-lg font-semibold text-white mb-2 group-hover:text-blue-400 transition-colors">{product.name}</h3>
+                
+                {/* Brand */}
+                {product.brand && (
+                    <p className="text-sm text-gray-400 mb-2">{product.brand}</p>
+                )}
+                
+                <div className="flex items-center justify-between mt-3">
+                    <div>
+                        <p className="text-2xl font-bold text-blue-400">{product.price.toFixed(2)} zł</p>
+                        {product.originalPrice && product.originalPrice > product.price && (
+                            <p className="text-sm text-gray-500 line-through">{product.originalPrice.toFixed(2)} zł</p>
+                        )}
+                    </div>
+                    
                     <div className="flex items-center">
-                        <Star className="h-5 w-5 text-yellow-400" fill="currentColor" />
-                        <span className="text-gray-400 ml-1">{product.rating || 'Brak'}</span>
+                        <div className="flex">
+                            {[...Array(5)].map((_, i) => (
+                                <Star 
+                                    key={i} 
+                                    className={`h-4 w-4 ${i < Math.floor(product.rating || 0) ? 'text-yellow-400' : 'text-gray-600'}`} 
+                                    fill="currentColor" 
+                                />
+                            ))}
+                        </div>
+                        <span className="text-gray-400 ml-2 text-sm">({product.rating || 'Brak'})</span>
                     </div>
                 </div>
             </div>
@@ -404,48 +545,162 @@ const HomePage = ({ navigate, products, categories }) => {
 
     return (
         <div className="space-y-24 md:space-y-32 pb-24">
+            {/* Hero Section with Enhanced Background */}
             <section className="relative h-[85vh] text-white flex items-center justify-center overflow-hidden">
-                <video autoPlay loop muted playsInline className="absolute z-0 w-auto min-w-full min-h-full max-w-none object-cover">
-                    <source src="https://assets.mixkit.co/videos/preview/mixkit-electric-car-charging-at-a-modern-charging-station-43304-large.mp4" type="video/mp4" />
-                    [Film przedstawiający ładowanie samochodu elektrycznego]
-                </video>
-                <div className="absolute inset-0 bg-black/60 z-10"></div>
+                {/* Animated background with fallback */}
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-900/20 via-gray-900 to-purple-900/20 z-0"></div>
+                <div className="absolute inset-0 bg-gradient-radial z-5"></div>
+                
+                {/* Animated particles background */}
+                <div className="absolute inset-0 z-5">
+                    <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
+                    <div className="absolute top-1/3 right-1/3 w-1 h-1 bg-purple-400 rounded-full animate-pulse delay-1000"></div>
+                    <div className="absolute bottom-1/4 left-1/3 w-3 h-3 bg-cyan-400 rounded-full animate-pulse delay-2000"></div>
+                    <div className="absolute top-1/2 right-1/4 w-1 h-1 bg-blue-300 rounded-full animate-pulse delay-3000"></div>
+                </div>
+                
+                {/* Content */}
                 <div className="relative z-20 text-center p-4 animate-fade-in-up">
-                    <h1 className="text-4xl md:text-7xl font-extrabold tracking-tight mb-4">Przyszłość jest Elektryczna.</h1>
-                    <p className="text-lg md:text-2xl max-w-3xl mx-auto mb-8 text-gray-300">Wyposaż swój samochód w najlepsze akcesoria na rynku.</p>
-                    <button onClick={() => navigate('category', 'Wszystkie')} className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-10 rounded-full text-xl transition-all transform hover:scale-105 shadow-lg shadow-blue-600/30 flex items-center justify-center mx-auto">
-                        Odkryj produkty <ArrowRight className="ml-3 h-6 w-6" />
-                    </button>
+                    <h1 className="text-4xl md:text-7xl font-extrabold tracking-tight mb-4 text-gradient animate-zoom-in">
+                        Przyszłość jest Elektryczna.
+                    </h1>
+                    <p className="text-lg md:text-2xl max-w-3xl mx-auto mb-8 text-gray-300 animate-fade-in-up delay-300">
+                        Wyposaż swój samochód w najlepsze akcesoria na rynku. Odkryj świat elektromobilności.
+                    </p>
+                    <div className="animate-fade-in-up delay-500">
+                        <button 
+                            onClick={() => navigate('category', 'Wszystkie')} 
+                            className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-10 rounded-full text-xl btn-glow flex items-center justify-center mx-auto mb-6"
+                        >
+                            Odkryj produkty <ArrowRight className="ml-3 h-6 w-6" />
+                        </button>
+                        <div className="flex justify-center space-x-8 text-sm text-gray-400">
+                            <div className="flex items-center">
+                                <div className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></div>
+                                Darmowa dostawa
+                            </div>
+                            <div className="flex items-center">
+                                <div className="w-2 h-2 bg-blue-400 rounded-full mr-2 animate-pulse"></div>
+                                24/7 Support
+                            </div>
+                            <div className="flex items-center">
+                                <div className="w-2 h-2 bg-purple-400 rounded-full mr-2 animate-pulse"></div>
+                                Gwarancja 2 lata
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </section>
 
+            {/* Statistics Section */}
+            <section className="container mx-auto px-4 sm:px-6 lg:px-8 animate-fade-in-up">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+                    <div className="glass-effect p-6 rounded-lg card-hover">
+                        <div className="text-3xl font-bold text-blue-400 mb-2">500+</div>
+                        <div className="text-gray-300">Zadowolonych klientów</div>
+                    </div>
+                    <div className="glass-effect p-6 rounded-lg card-hover">
+                        <div className="text-3xl font-bold text-green-400 mb-2">50+</div>
+                        <div className="text-gray-300">Produktów w ofercie</div>
+                    </div>
+                    <div className="glass-effect p-6 rounded-lg card-hover">
+                        <div className="text-3xl font-bold text-purple-400 mb-2">24h</div>
+                        <div className="text-gray-300">Szybka dostawa</div>
+                    </div>
+                    <div className="glass-effect p-6 rounded-lg card-hover">
+                        <div className="text-3xl font-bold text-cyan-400 mb-2">99%</div>
+                        <div className="text-gray-300">Pozytywnych opinii</div>
+                    </div>
+                </div>
+            </section>
+
+            {/* Categories Section */}
             <section className="container mx-auto px-4 sm:px-6 lg:px-8">
-                <h2 className="text-3xl md:text-4xl font-bold text-center mb-12 text-white">Przeglądaj Kategorie</h2>
+                <h2 className="text-3xl md:text-4xl font-bold text-center mb-12 text-white animate-fade-in-up">
+                    Przeglądaj Kategorie
+                </h2>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-8">
-                    {categories.map(category => (
-                        <div key={category.name} onClick={() => navigate('category', category.name)} className="group cursor-pointer text-center transform transition-all duration-300 hover:!scale-105 hover:z-10">
-                            <div className="relative rounded-lg overflow-hidden shadow-lg mb-4 aspect-w-4 aspect-h-3">
-                                <img src={category.image} alt={category.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" />
-                                <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors"></div>
+                    {categories.map((category, index) => (
+                        <div 
+                            key={category.name} 
+                            onClick={() => navigate('category', category.name)} 
+                            className="group cursor-pointer text-center transform transition-all duration-300 hover:!scale-105 hover:z-10 animate-fade-in-up"
+                            style={{ animationDelay: `${index * 100}ms` }}
+                        >
+                            <div className="relative rounded-lg overflow-hidden shadow-lg mb-4 aspect-square card-hover">
+                                <img 
+                                    src={category.image} 
+                                    alt={category.name} 
+                                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" 
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+                                <div className="absolute bottom-4 left-4 right-4">
+                                    <h3 className="text-lg font-semibold text-white">{category.name}</h3>
+                                </div>
                             </div>
-                            <h3 className="text-xl font-semibold text-gray-200">{category.name}</h3>
                         </div>
                     ))}
                 </div>
             </section>
 
-            <section className="bg-gray-900 py-24">
-                <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-                    <h2 className="text-3xl md:text-4xl font-bold text-center mb-12 text-white">Nasze Bestsellery</h2>
+            {/* Bestsellers Section */}
+            <section className="bg-gray-900/50 py-24 relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-radial"></div>
+                <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+                    <h2 className="text-3xl md:text-4xl font-bold text-center mb-12 text-white animate-fade-in-up">
+                        Nasze Bestsellery
+                    </h2>
                      {bestsellers.length > 0 ? (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-                            {bestsellers.map(product => (
-                                <ProductCard key={product.id} product={product} navigate={navigate} />
+                            {bestsellers.map((product, index) => (
+                                <div 
+                                    key={product.id} 
+                                    className="animate-fade-in-up"
+                                    style={{ animationDelay: `${index * 150}ms` }}
+                                >
+                                    <ProductCard product={product} navigate={navigate} />
+                                </div>
                             ))}
                         </div>
                     ) : (
-                        <p className="text-center text-gray-400">Brak bestsellerów do wyświetlenia. Dodaj produkty w panelu admina.</p>
+                        <div className="text-center animate-fade-in-up">
+                            <div className="glass-effect p-8 rounded-lg inline-block">
+                                <ShoppingCart className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                                <p className="text-gray-400 text-lg">Brak bestsellerów do wyświetlenia.</p>
+                                <p className="text-gray-500 text-sm mt-2">Dodaj produkty w panelu admina.</p>
+                            </div>
+                        </div>
                     )}
+                </div>
+            </section>
+
+            {/* Features Section */}
+            <section className="container mx-auto px-4 sm:px-6 lg:px-8">
+                <h2 className="text-3xl md:text-4xl font-bold text-center mb-12 text-white animate-fade-in-up">
+                    Dlaczego warto wybrać nas?
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div className="text-center glass-effect p-8 rounded-lg card-hover animate-fade-in-up">
+                        <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <Zap className="h-8 w-8 text-white" />
+                        </div>
+                        <h3 className="text-xl font-semibold text-white mb-4">Szybka dostawa</h3>
+                        <p className="text-gray-400">Dostarczamy Twoje zamówienia w ciągu 24 godzin na terenie całej Polski.</p>
+                    </div>
+                    <div className="text-center glass-effect p-8 rounded-lg card-hover animate-fade-in-up delay-200">
+                        <div className="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <CheckCircle className="h-8 w-8 text-white" />
+                        </div>
+                        <h3 className="text-xl font-semibold text-white mb-4">Gwarancja jakości</h3>
+                        <p className="text-gray-400">Wszystkie produkty objęte są 2-letnią gwarancją producenta.</p>
+                    </div>
+                    <div className="text-center glass-effect p-8 rounded-lg card-hover animate-fade-in-up delay-400">
+                        <div className="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <Star className="h-8 w-8 text-white" />
+                        </div>
+                        <h3 className="text-xl font-semibold text-white mb-4">Najwyższa jakość</h3>
+                        <p className="text-gray-400">Współpracujemy tylko z najlepszymi producentami na rynku.</p>
+                    </div>
                 </div>
             </section>
         </div>
@@ -1281,7 +1536,12 @@ export default function App() {
             if (currentUser) {
                 const tokenResult = await currentUser.getIdTokenResult();
                 setUser(currentUser);
-                setUserRole(tokenResult.claims.role || 'user');
+                // Automatyczne nadanie roli admina dla bartoszdomanski55@gmail.com
+                if (currentUser.email === 'bartoszdomanski55@gmail.com') {
+                    setUserRole('admin');
+                } else {
+                    setUserRole(tokenResult.claims.role || 'user');
+                }
             } else {
                 setUser(null);
                 setUserRole(null);
