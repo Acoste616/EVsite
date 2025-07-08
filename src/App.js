@@ -1,27 +1,34 @@
-import React, { useState, useEffect, createContext, useContext, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, createContext, useContext } from 'react';
 import { initializeApp } from 'firebase/app';
-import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from 'firebase/auth';
-import { getFirestore, collection, getDocs, doc, getDoc, addDoc, updateDoc, deleteDoc, query, where, onSnapshot } from 'firebase/firestore';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { getAnalytics } from "firebase/analytics";
+import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { getFirestore, collection, getDocs, doc, getDoc, addDoc, updateDoc, deleteDoc, query, where, onSnapshot, setDoc } from 'firebase/firestore';
+import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { ShoppingCart, User, Star, Menu, X, Trash2, Plus, Minus, Truck, CreditCard, ShieldCheck, Search, Filter, LogOut, Settings, ArrowRight, Eye, Zap, ImagePlus, AlertCircle, CheckCircle, BarChart } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
-// --- KONFIGURACJA FIREBASE (ZAKTUALIZOWANA) ---
+// --- KONFIGURACJA FIREBASE (POPRAWIONA) ---
 const firebaseConfig = {
   apiKey: "AIzaSyC6L-8owWH1z6Ipf2FZax7gZ7FQOvuSNJs",
   authDomain: "evshop-6719a.firebaseapp.com",
   projectId: "evshop-6719a",
-  storageBucket: "evshop-6719a.appspot.com", // Poprawiona domena dla Storage
+  storageBucket: "evshop-6719a.firebasestorage.app",
   messagingSenderId: "619247072748",
   appId: "1:619247072748:web:ad274f442dba53736cbcc9",
   measurementId: "G-Z80X8YRR4L"
 };
 
-
 // Inicjalizacja Firebase
 const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const storage = getStorage(app);
+
+const adminUID = "s8k8u9l3R3g8h3q2N4y6E5rO9x23";
+const logoUrl = `${process.env.PUBLIC_URL}/logo.png`;
+const defaultProductImageUrl = `${process.env.PUBLIC_URL}/default-product.png`;
+const heroImageUrl = `${process.env.PUBLIC_URL}/hero-background.jpg`;
 
 // --- SAMPLE TESLA PRODUCTS ---
 const sampleTeslaProducts = [
@@ -208,7 +215,24 @@ const api = {
   uploadImage: async (file) => {
     const storageRef = ref(storage, `products/${Date.now()}_${file.name}`);
     await uploadBytes(storageRef, file);
-    return await getDownloadURL(storageRef);
+    return getDownloadURL(storageRef);
+  },
+  deleteImage: async (imageUrl) => {
+    // Zapobiegaj próbie usunięcia przykładowych zdjęć z unsplash
+    if (imageUrl.includes('unsplash.com')) {
+      console.log("Próba usunięcia przykładowego zdjęcia - operacja zignorowana.");
+      return;
+    }
+    try {
+      const imageRef = ref(storage, imageUrl);
+      await deleteObject(imageRef);
+    } catch (error) {
+      if (error.code === 'storage/object-not-found') {
+        console.warn("Próbowano usunąć obraz, który nie istnieje w Firebase Storage:", imageUrl);
+      } else {
+        throw error;
+      }
+    }
   },
   // Funkcje dla admina
   addProduct: async (product) => addDoc(collection(db, 'products'), product),
@@ -279,8 +303,8 @@ const Header = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
                 <div className="flex items-center justify-between h-20">
                     <div className="flex-shrink-0">
                         <a onClick={() => navigate('home')} className="flex items-center space-x-2 cursor-pointer">
-                            <Zap className="h-8 w-8 text-blue-500" />
-                            <span className="text-2xl font-bold text-white">EV Akcesoria</span>
+                            <img src={logoUrl} alt="Logo" className="h-8 w-8" />
+                            <span className="text-2xl font-bold text-white">EV-SHOP</span>
                         </a>
                     </div>
                     <nav className="hidden md:flex md:space-x-8 items-center text-lg font-medium text-gray-300">
@@ -373,24 +397,25 @@ const Footer = () => (
 const ProductCard = ({ product, navigate }) => {
     const { addToCart } = useContext(AppContext);
     return (
-        <div className="bg-gray-800 border border-gray-700 rounded-lg shadow-lg overflow-hidden group transition-all duration-300 hover:shadow-blue-500/20 hover:border-blue-800/50 transform hover:-translate-y-2">
+        <div className="glass-dark border border-gray-700 rounded-lg shadow-lg overflow-hidden group transition-all duration-300 hover:shadow-blue-500/20 hover:border-blue-800/50 transform hover:-translate-y-2 card-3d animate-fade-in hover-lift">
             <div className="relative">
-                <img src={product.imageUrls && product.imageUrls[0] ? product.imageUrls[0] : 'https://placehold.co/600x600/111827/ffffff?text=Brak+zdjęcia'} alt={product.name} className="w-full h-64 object-cover" />
-                <div className="absolute top-0 right-0 bg-blue-600 text-white px-3 py-1 m-2 rounded-full text-sm font-semibold">
+                <img src={product.imageUrls && product.imageUrls[0] ? product.imageUrls[0] : defaultProductImageUrl} alt={product.name} className="w-full h-64 object-cover hover:scale-110 transition-transform duration-300" />
+                <div className="absolute top-0 right-0 bg-blue-600 text-white px-3 py-1 m-2 rounded-full text-sm font-semibold animate-pulse-slow">
                     {product.category}
                 </div>
+                {product.bestseller && <div className="absolute top-0 left-0 bg-red-500 text-white px-3 py-1 m-2 rounded-full text-sm font-semibold animate-bounce-slow">Bestseller</div>}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 <div className="absolute bottom-4 left-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex justify-center space-x-2">
-                    <button onClick={(e) => { e.stopPropagation(); addToCart(product); }} className="bg-blue-600 text-white font-bold py-2 px-4 rounded-full hover:bg-blue-500 flex-1">Do koszyka</button>
-                    <button onClick={() => navigate('product', product.id)} className="bg-gray-200/80 text-gray-900 font-bold p-2 rounded-full hover:bg-white"><Eye /></button>
+                    <button onClick={(e) => { e.stopPropagation(); addToCart(product); }} className="btn-electric text-white font-bold py-2 px-4 rounded-full hover:animate-glow flex-1">Do koszyka</button>
+                    <button onClick={() => navigate('product', product.id)} className="glass-effect text-white font-bold p-2 rounded-full hover:bg-white/20"><Eye /></button>
                 </div>
             </div>
             <div className="p-4 cursor-pointer" onClick={() => navigate('product', product.id)}>
-                <h3 className="text-lg font-semibold truncate text-white">{product.name}</h3>
+                <h3 className="text-lg font-semibold truncate text-white animate-slide-in-left">{product.name}</h3>
                 <div className="flex items-center justify-between mt-2">
-                    <p className="text-xl font-bold text-blue-400">{product.price.toFixed(2)} zł</p>
+                    <p className="text-xl font-bold text-blue-400 animate-glow">{product.price.toFixed(2)} zł</p>
                     <div className="flex items-center">
-                        <Star className="h-5 w-5 text-yellow-400" fill="currentColor" />
+                        <Star className="h-5 w-5 text-yellow-400 animate-pulse" fill="currentColor" />
                         <span className="text-gray-400 ml-1">{product.rating || 'Brak'}</span>
                     </div>
                 </div>
@@ -405,16 +430,20 @@ const HomePage = ({ navigate, products, categories }) => {
     return (
         <div className="space-y-24 md:space-y-32 pb-24">
             <section className="relative h-[85vh] text-white flex items-center justify-center overflow-hidden">
-                <video autoPlay loop muted playsInline className="absolute z-0 w-auto min-w-full min-h-full max-w-none object-cover">
-                    <source src="https://assets.mixkit.co/videos/preview/mixkit-electric-car-charging-at-a-modern-charging-station-43304-large.mp4" type="video/mp4" />
-                    [Film przedstawiający ładowanie samochodu elektrycznego]
-                </video>
-                <div className="absolute inset-0 bg-black/60 z-10"></div>
-                <div className="relative z-20 text-center p-4 animate-fade-in-up">
-                    <h1 className="text-4xl md:text-7xl font-extrabold tracking-tight mb-4">Przyszłość jest Elektryczna.</h1>
-                    <p className="text-lg md:text-2xl max-w-3xl mx-auto mb-8 text-gray-300">Wyposaż swój samochód w najlepsze akcesoria na rynku.</p>
-                    <button onClick={() => navigate('category', 'Wszystkie')} className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-10 rounded-full text-xl transition-all transform hover:scale-105 shadow-lg shadow-blue-600/30 flex items-center justify-center mx-auto">
-                        Odkryj produkty <ArrowRight className="ml-3 h-6 w-6" />
+                <div className="absolute z-0 w-full h-full bg-cover bg-center" style={{ backgroundImage: `url('https://images.unsplash.com/photo-1543349932-917a145a12a3?q=80&w=1920&auto=format&fit=crop')` }}></div>
+                <div className="absolute inset-0 bg-black/70 z-10"></div>
+                
+                <div className="absolute inset-0 z-20 pointer-events-none overflow-hidden">
+                    <div className="absolute top-1/4 left-0 text-6xl text-cyan-300/60 animate-lightning" style={{ animationDuration: '5s' }}>⚡</div>
+                    <div className="absolute top-1/2 right-0 text-4xl text-cyan-300/40 animate-lightning" style={{ animationDelay: '2s', animationDuration: '4s', transform: 'scaleX(-1)' }}>⚡</div>
+                    <div className="absolute bottom-1/4 left-1/4 text-5xl text-cyan-300/50 animate-lightning" style={{ animationDelay: '1s', animationDuration: '6s' }}>⚡</div>
+                </div>
+                
+                <div className="relative z-30 text-center p-4 animate-fade-in-up">
+                    <h1 className="text-4xl md:text-7xl font-extrabold tracking-tight mb-4 animate-glow">Przyszłość jest Elektryczna.</h1>
+                    <p className="text-lg md:text-2xl max-w-3xl mx-auto mb-8 text-gray-300 animate-slide-in-left" style={{animationDelay: '0.2s'}}>Wyposaż swój samochód w najlepsze akcesoria na rynku.</p>
+                    <button onClick={() => navigate('category', 'Wszystkie')} className="btn-electric hover-glow text-white font-bold py-4 px-10 rounded-full text-xl transition-all transform hover:scale-105 shadow-lg shadow-blue-600/30 flex items-center justify-center mx-auto animate-slide-in-right" style={{animationDelay: '0.4s'}}>
+                        Odkryj produkty <ArrowRight className="ml-3 h-6 w-6 animate-bounce-slow" />
                     </button>
                 </div>
             </section>
@@ -422,13 +451,14 @@ const HomePage = ({ navigate, products, categories }) => {
             <section className="container mx-auto px-4 sm:px-6 lg:px-8">
                 <h2 className="text-3xl md:text-4xl font-bold text-center mb-12 text-white">Przeglądaj Kategorie</h2>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-8">
-                    {categories.map(category => (
-                        <div key={category.name} onClick={() => navigate('category', category.name)} className="group cursor-pointer text-center transform transition-all duration-300 hover:!scale-105 hover:z-10">
-                            <div className="relative rounded-lg overflow-hidden shadow-lg mb-4 aspect-w-4 aspect-h-3">
+                    {categories.map((category, index) => (
+                        <div key={category.name} onClick={() => navigate('category', category.name)} className="group cursor-pointer text-center transform transition-all duration-300 hover:!scale-105 hover:z-10 card-3d animate-fade-in hover-lift" style={{animationDelay: `${index * 0.1}s`}}>
+                            <div className="relative rounded-lg overflow-hidden shadow-lg mb-4 aspect-w-4 aspect-h-3 glass-dark">
                                 <img src={category.image} alt={category.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" />
                                 <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors"></div>
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
                             </div>
-                            <h3 className="text-xl font-semibold text-gray-200">{category.name}</h3>
+                            <h3 className="text-xl font-semibold text-gray-200 animate-slide-in-up">{category.name}</h3>
                         </div>
                     ))}
                 </div>
@@ -901,6 +931,19 @@ const LoginPage = ({ navigate, addNotification }) => {
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
+    const handleGoogleLogin = async () => {
+      const provider = new GoogleAuthProvider();
+      try {
+        await signInWithPopup(auth, provider);
+        addNotification('Zalogowano pomyślnie przez Google!');
+        navigate('home');
+      } catch (err) {
+        console.error("Google login error:", err);
+        setError('Błąd logowania przez Google. Spróbuj ponownie.');
+        addNotification('Błąd logowania przez Google.', 'error');
+      }
+    };
+
     const handleLogin = async (e) => {
         e.preventDefault();
         setError('');
@@ -910,7 +953,16 @@ const LoginPage = ({ navigate, addNotification }) => {
             addNotification('Zalogowano pomyślnie!');
             navigate('home');
         } catch (err) {
-            setError('Nieprawidłowy email lub hasło.');
+            console.error('Błąd logowania:', err);
+            if (err.code === 'auth/user-not-found') {
+                setError('Użytkownik nie istnieje. Najpierw się zarejestruj.');
+            } else if (err.code === 'auth/wrong-password') {
+                setError('Nieprawidłowe hasło.');
+            } else if (err.code === 'auth/invalid-email') {
+                setError('Nieprawidłowy format email.');
+            } else {
+                setError('Błąd logowania: ' + err.message);
+            }
             addNotification('Błąd logowania.', 'error');
         } finally {
             setIsLoading(false);
@@ -929,7 +981,21 @@ const LoginPage = ({ navigate, addNotification }) => {
                         {isLoading ? 'Logowanie...' : 'Zaloguj się'}
                     </button>
                 </form>
+                <div className="relative my-4">
+                  <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-gray-600"></span></div>
+                  <div className="relative flex justify-center text-sm"><span className="px-2 bg-gray-800 text-gray-400">LUB</span></div>
+                </div>
+                <button onClick={handleGoogleLogin} className="w-full flex items-center justify-center gap-2 bg-white text-gray-800 font-bold py-3 rounded-md hover:bg-gray-200 transition-colors">
+                  <svg className="w-5 h-5" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path><path fill="none" d="M0 0h48v48H0z"></path></svg>
+                  Zaloguj się przez Google
+                </button>
                 <p className="text-center text-gray-400 mt-4">Nie masz konta? <a onClick={() => navigate('register')} className="text-blue-400 hover:underline cursor-pointer">Zarejestruj się</a></p>
+                <div className="mt-6 p-4 bg-blue-900/30 border border-blue-600/50 rounded-lg">
+                    <h3 className="text-blue-300 font-semibold mb-2">🔑 Dane logowania administratora:</h3>
+                    <p className="text-sm text-gray-300">Email: <span className="text-blue-400 font-mono">bartoszdomanski55@gmail.com</span></p>
+                    <p className="text-sm text-gray-300">Hasło: <span className="text-blue-400 font-mono">Admin123</span></p>
+                    <p className="text-xs text-red-400 font-bold mt-2">⚠️ WAŻNE: Najpierw ZAREJESTRUJ się z powyższymi danymi, a dopiero potem się ZALOGUJ.</p>
+                </div>
             </div>
         </div>
     );
@@ -1059,14 +1125,39 @@ const AdminProducts = () => {
 
     const handleSave = async (productData) => {
         setIsLoading(true);
+
+        const cleanData = (data) => {
+            const price = parseFloat(data.price);
+            const rating = parseFloat(data.rating);
+            return {
+                name: data.name || '',
+                category: data.category || 'Inne',
+                description: data.description || '',
+                price: isNaN(price) ? 0 : price,
+                imageUrls: data.imageUrls || [],
+                rating: isNaN(rating) ? 0 : rating,
+                brand: data.brand || '',
+                bestseller: Boolean(data.bestseller),
+                createdAt: data.createdAt || new Date().toISOString()
+            };
+        };
+        
+        const sanitizedData = cleanData(productData);
+
+        if (!sanitizedData.name || !sanitizedData.category || sanitizedData.price <= 0) {
+            addNotification('Wypełnij wszystkie wymagane pola: nazwa, kategoria i cena (>0) muszą być wypełnione', 'error');
+            setIsLoading(false);
+            return;
+        }
+
         try {
             if (editingProduct) {
-                await api.updateProduct(editingProduct.id, productData);
-                setProducts(products.map(p => p.id === editingProduct.id ? { ...productData, id: editingProduct.id } : p));
+                await api.updateProduct(editingProduct.id, sanitizedData);
+                setProducts(products.map(p => p.id === editingProduct.id ? { ...sanitizedData, id: editingProduct.id } : p));
                 addNotification('Produkt zaktualizowany.');
             } else {
-                const newDocRef = await api.addProduct(productData);
-                setProducts([...products, { ...productData, id: newDocRef.id }]);
+                const newDocRef = await api.addProduct(sanitizedData);
+                setProducts([...products, { ...sanitizedData, id: newDocRef.id }]);
                 addNotification('Produkt dodany.');
             }
             setIsModalOpen(false);
@@ -1143,15 +1234,28 @@ const ProductEditModal = ({ product, onSave, onClose }) => {
         setIsUploading(true);
         try {
             const url = await api.uploadImage(file);
-            setFormData(prev => ({ ...prev, imageUrls: [...prev.imageUrls, url] }));
+            setFormData(prev => ({ ...prev, imageUrls: [...(prev.imageUrls || []), url] }));
             addNotification('Zdjęcie dodane.');
         } catch (error) {
+            console.error(error);
             addNotification('Błąd uploadu zdjęcia.', 'error');
         } finally {
             setIsUploading(false);
         }
     };
     
+    const handleImageDelete = async (urlToDelete) => {
+        if (!window.confirm('Czy na pewno chcesz usunąć to zdjęcie?')) return;
+        try {
+            await api.deleteImage(urlToDelete);
+            setFormData(prev => ({ ...prev, imageUrls: prev.imageUrls.filter(url => url !== urlToDelete) }));
+            addNotification('Zdjęcie usunięte.');
+        } catch (error) {
+            console.error(error);
+            addNotification('Błąd podczas usuwania zdjęcia.', 'error');
+        }
+    };
+
     const handleSubmit = (e) => {
         e.preventDefault();
         onSave(formData);
@@ -1163,23 +1267,50 @@ const ProductEditModal = ({ product, onSave, onClose }) => {
                 <h2 className="text-2xl font-bold mb-6 text-white">{product ? 'Edytuj produkt' : 'Dodaj produkt'}</h2>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <input name="name" value={formData.name} onChange={handleChange} placeholder="Nazwa produktu" className="w-full p-2 border rounded bg-gray-700 border-gray-600 text-white" required />
-                    <input name="price" type="number" step="0.01" value={formData.price} onChange={handlePriceChange} placeholder="Cena" className="w-full p-2 border rounded bg-gray-700 border-gray-600 text-white" required />
+                    <input name="price" type="number" step="0.01" min="0" value={formData.price} onChange={handlePriceChange} placeholder="Cena" className="w-full p-2 border rounded bg-gray-700 border-gray-600 text-white" required />
                     <select name="category" value={formData.category} onChange={handleChange} className="w-full p-2 border rounded bg-gray-700 border-gray-600 text-white">
                         {categories.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
                     </select>
                     <input name="brand" value={formData.brand} onChange={handleChange} placeholder="Marka" className="w-full p-2 border rounded bg-gray-700 border-gray-600 text-white" />
-                    <textarea name="description" value={formData.description} onChange={handleChange} placeholder="Opis" className="w-full p-2 border rounded h-32 bg-gray-700 border-gray-600 text-white"></textarea>
-                    <div className="flex items-center">
-                        <input type="checkbox" id="bestseller" name="bestseller" checked={formData.bestseller} onChange={handleChange} className="h-4 w-4 text-blue-600 bg-gray-700 border-gray-600 rounded" />
-                        <label htmlFor="bestseller" className="ml-2 text-white">Bestseller</label>
+                    <textarea name="description" value={formData.description} onChange={handleChange} placeholder="Opis produktu" className="w-full p-2 border rounded bg-gray-700 border-gray-600 text-white h-24"></textarea>
+                    
+                    <div className="flex items-center space-x-4">
+                        <label className="text-gray-300 flex items-center">
+                            <input type="checkbox" name="bestseller" checked={formData.bestseller} onChange={handleChange} className="mr-2 h-4 w-4 bg-gray-700 border-gray-600 text-blue-500 focus:ring-blue-600" />
+                            Bestseller
+                        </label>
+                        <div className="flex items-center">
+                            <label htmlFor="rating" className="text-gray-300 mr-2">Ocena:</label>
+                            <input id="rating" name="rating" type="number" step="0.1" min="0" max="5" value={formData.rating} onChange={handleChange} className="w-24 p-2 border rounded bg-gray-700 border-gray-600 text-white" />
+                        </div>
                     </div>
                     <div className="mb-4">
                         <label className="block text-gray-400 mb-2">Zdjęcia</label>
-                        <div className="grid grid-cols-4 gap-2 mb-2">
-                            {formData.imageUrls.map(url => <img key={url} src={url} className="w-full h-16 object-cover rounded" />)}
+                        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 mb-2">
+                            {formData.imageUrls && formData.imageUrls.map(url => (
+                                <div key={url} className="relative group">
+                                    <img src={url} alt="product" className="w-full h-24 object-cover rounded" />
+                                    <button
+                                        type="button"
+                                        onClick={() => handleImageDelete(url)}
+                                        className="absolute top-1 right-1 bg-red-600/80 hover:bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                        aria-label="Usuń zdjęcie"
+                                    >
+                                        <X size={14} />
+                                    </button>
+                                </div>
+                            ))}
                         </div>
-                        <input type="file" onChange={handleImageUpload} className="text-white" />
-                        {isUploading && <p className="text-blue-400">Przesyłanie...</p>}
+                        <div className="mt-2">
+                            <label className="block text-sm font-medium text-gray-400 mb-2" htmlFor="file_input">Dodaj zdjęcie</label>
+                            <input 
+                                id="file_input" 
+                                type="file" 
+                                onChange={handleImageUpload} 
+                                className="text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-500 cursor-pointer" 
+                            />
+                            {isUploading && <p className="text-blue-400 mt-2">Przesyłanie...</p>}
+                        </div>
                     </div>
                     <div className="flex justify-end space-x-4 mt-6">
                         <button type="button" onClick={onClose} className="bg-gray-600 text-white font-bold py-2 px-4 rounded hover:bg-gray-500">Anuluj</button>
@@ -1243,6 +1374,43 @@ const AdminOrders = () => {
     );
 };
 
+const HeroSection = () => (
+  <section className="hero">
+    <div 
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        backgroundImage: `url(${process.env.PUBLIC_URL}/hero-background.jpg)`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        zIndex: 0
+      }}
+    />
+    <div 
+      className="absolute top-0 left-0 right-0 bottom-0 z-10"
+      style={{ background: 'linear-gradient(to top, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.3))' }}
+    ></div>
+    <div className="hero-content z-20">
+      <motion.div
+        initial={{ opacity: 0, y: -50 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8 }}
+      >
+        <img src={logoUrl} alt="EV-SHOP Logo" className="mx-auto mb-4 w-40 h-40 object-contain" />
+        <h1 className="text-5xl md:text-7xl font-bold text-white text-glow">
+          EV-SHOP
+        </h1>
+        <p className="text-xl md:text-2xl text-gray-300 mt-4">
+          Nowoczesny wynajem aut elektrycznych
+        </p>
+      </motion.div>
+    </div>
+  </section>
+);
+
 // --- GŁÓWNY KOMPONENT APLIKACJI ---
 export default function App() {
     const [page, setPage] = useState('home');
@@ -1279,9 +1447,13 @@ export default function App() {
 
         const unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
             if (currentUser) {
-                const tokenResult = await currentUser.getIdTokenResult();
                 setUser(currentUser);
-                setUserRole(tokenResult.claims.role || 'user');
+                // Sprawdzenie czy email należy do administratora
+                if (currentUser.email === 'bartoszdomanski55@gmail.com') {
+                    setUserRole('admin');
+                } else {
+                    setUserRole('user');
+                }
             } else {
                 setUser(null);
                 setUserRole(null);

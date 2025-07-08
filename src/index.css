@@ -1,3 +1,417 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ===== ANIMACJE I EFEKTY WIZUALNE ===== */
+
+/* Animacje fade-in */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeInUp {
+  from { 
+    opacity: 0; 
+    transform: translateY(30px); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0); 
+  }
+}
+
+@keyframes slideInLeft {
+  from { 
+    opacity: 0; 
+    transform: translateX(-30px); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateX(0); 
+  }
+}
+
+@keyframes slideInRight {
+  from { 
+    opacity: 0; 
+    transform: translateX(30px); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateX(0); 
+  }
+}
+
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-10px); }
+  60% { transform: translateY(-5px); }
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+/* Zmieniony efekt glow - teraz jako subtelna poświata tekstu */
+@keyframes glow {
+  0%, 100% {
+    text-shadow: 0 0 8px rgba(59, 130, 246, 0.6),
+                 0 0 12px rgba(59, 130, 246, 0.4);
+  }
+  50% {
+    text-shadow: 0 0 12px rgba(59, 130, 246, 1),
+                 0 0 25px rgba(59, 130, 246, 0.8),
+                 0 0 40px rgba(59, 130, 246, 0.4);
+  }
+}
+
+@keyframes borderGlow {
+  0% { 
+    border-color: rgba(59, 130, 246, 0.5);
+    box-shadow: 0 0 5px rgba(59, 130, 246, 0.3);
+  }
+  50% { 
+    border-color: rgba(59, 130, 246, 0.8);
+    box-shadow: 0 0 15px rgba(59, 130, 246, 0.6),
+                0 0 25px rgba(59, 130, 246, 0.4);
+  }
+  100% { 
+    border-color: rgba(59, 130, 246, 0.5);
+    box-shadow: 0 0 5px rgba(59, 130, 246, 0.3);
+  }
+}
+
+/* Animacja błyskawic */
+@keyframes lightning {
+  0% { opacity: 0; transform: scale(0.8) translateX(-150px) rotate(-20deg); }
+  10% { opacity: 1; transform: scale(1) translateX(0) rotate(5deg); }
+  20% { opacity: 0; transform: scale(0.8) translateX(150px) rotate(20deg); }
+  100% { opacity: 0; }
+}
+
+@keyframes lightningGlow {
+  0% { opacity: 0; }
+  50% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* Animacja cząsteczek */
+@keyframes float {
+  0% { transform: translateY(0px) rotate(0deg); }
+  33% { transform: translateY(-10px) rotate(120deg); }
+  66% { transform: translateY(5px) rotate(240deg); }
+  100% { transform: translateY(0px) rotate(360deg); }
+}
+
+@keyframes particle {
+  0% { opacity: 0; transform: translateY(100px) scale(0); }
+  50% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-100px) scale(0); }
+}
+
+/* Klasy animacji */
+.animate-fade-in {
+  animation: fadeIn 0.6s ease-out;
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.8s ease-out;
+}
+
+.animate-slide-in-left {
+  animation: slideInLeft 0.6s ease-out;
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 0.6s ease-out;
+}
+
+.animate-bounce-slow {
+  animation: bounce 2s infinite;
+}
+
+.animate-pulse-slow {
+  animation: pulse 3s infinite;
+}
+
+.animate-glow {
+  animation: glow 2.5s ease-in-out infinite;
+}
+
+/* Nowa klasa dla ramki */
+.animate-border-glow {
+  border: 2px solid transparent;
+  animation: borderGlow 2s infinite;
+}
+
+.animate-lightning {
+  animation: lightning 3s infinite;
+}
+
+.animate-lightning-glow {
+  animation: lightningGlow 3s infinite;
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-particle {
+  animation: particle 4s infinite;
+}
+
+/* Efekt Glass */
+.glass-effect {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.glass-dark {
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Gradient backgrounds */
+.gradient-bg {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.gradient-electric {
+  background: linear-gradient(135deg, #00c6ff 0%, #0072ff 100%);
+}
+
+.gradient-hero {
+  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+}
+
+/* Hover effects */
+.hover-scale:hover {
+  transform: scale(1.05);
+  transition: transform 0.3s ease;
+}
+
+.hover-glow:hover {
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.6);
+  transition: box-shadow 0.3s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-5px);
+  transition: transform 0.3s ease;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1f2937;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #4b5563;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Efekty 3D dla kart */
+.card-3d {
+  perspective: 1000px;
+  transform-style: preserve-3d;
+}
+
+.card-3d:hover {
+  transform: rotateY(5deg) rotateX(5deg);
+  transition: transform 0.3s ease;
+}
+
+/* Animowane tło z cząsteczkami */
+.particles-bg {
+  position: relative;
+  overflow: hidden;
+}
+
+.particles-bg::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="20" cy="20" r="2" fill="rgba(59,130,246,0.3)" opacity="0.7"><animate attributeName="opacity" values="0.7;0.3;0.7" dur="3s" repeatCount="indefinite"/></circle><circle cx="80" cy="40" r="1.5" fill="rgba(59,130,246,0.4)" opacity="0.5"><animate attributeName="opacity" values="0.5;0.8;0.5" dur="4s" repeatCount="indefinite"/></circle><circle cx="40" cy="80" r="1" fill="rgba(59,130,246,0.5)" opacity="0.6"><animate attributeName="opacity" values="0.6;0.2;0.6" dur="5s" repeatCount="indefinite"/></circle></svg>') repeat;
+  animation: float 20s linear infinite;
+}
+
+/* Błyskawice w tle */
+.lightning-bg {
+  position: relative;
+  overflow: hidden;
+}
+
+.lightning-bg::after {
+  content: '⚡';
+  position: absolute;
+  top: 20%;
+  left: -100px;
+  font-size: 3rem;
+  color: rgba(59, 130, 246, 0.6);
+  animation: lightning 4s infinite;
+  animation-delay: 0s;
+}
+
+.lightning-bg::before {
+  content: '⚡';
+  position: absolute;
+  top: 60%;
+  right: -100px;
+  font-size: 2rem;
+  color: rgba(59, 130, 246, 0.4);
+  animation: lightning 6s infinite;
+  animation-delay: 2s;
+  transform: scaleX(-1);
+}
+
+/* Dodatkowe efekty hover dla przycisków */
+.btn-electric {
+  background: linear-gradient(135deg, #00c6ff 0%, #0072ff 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-electric::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transition: left 0.5s;
+}
+
+.btn-electric:hover::before {
+  left: 100%;
+}
+
+/* Nowa klasa dla tekstu z ramką */
+.text-frame-glow {
+  position: relative;
+  display: inline-block;
+  padding: 1rem 2rem;
+  border: 2px solid transparent;
+  border-radius: 0.5rem;
+  background: rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(10px);
+}
+
+.text-frame-glow::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(45deg, 
+    rgba(59, 130, 246, 0.8), 
+    rgba(59, 130, 246, 0.4), 
+    rgba(59, 130, 246, 0.8)
+  );
+  border-radius: 0.5rem;
+  z-index: -1;
+  animation: borderGlow 2s infinite;
+}
+
+/* Animacja ładowania */
+.loading-spinner {
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #3498db;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Responsive animations */
+@media (max-width: 768px) {
+  .animate-fade-in-up {
+    animation: fadeInUp 0.6s ease-out;
+  }
+  
+  .animate-slide-in-left,
+  .animate-slide-in-right {
+    animation: fadeIn 0.6s ease-out;
+  }
+  
+  .text-frame-glow {
+    padding: 0.5rem 1rem;
+  }
+}
+
+/* Prefers reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Dodaj tutaj swoje style Tailwind lub niestandardowe style CSS */
+
+body {
+  @apply bg-black text-white;
+  font-family: 'Poppins', sans-serif;
+}
+
+.hero {
+  position: relative;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hero-content {
+  position: relative;
+  z-index: 2; /* Upewnij się, że content jest nad nakładką */
+  text-align: center;
+}
+
+.text-glow {
+  text-shadow: 0 0 8px rgba(0, 175, 255, 0.6), 0 0 20px rgba(0, 175, 255, 0.4);
+}
+.product-card {
+  @apply bg-gray-900 border border-gray-800 rounded-lg overflow-hidden transition-transform duration-300 transform hover:scale-105;
+}
+
+.product-image {
+  @apply w-full h-64 object-cover;
+}
+
+/* Poprawki dla przycisków i inputów */
+.btn-primary {
+  @apply bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition-colors duration-300;
+}
+
+.input-field {
+  @apply bg-gray-800 border border-gray-700 text-white rounded-md w-full p-2 focus:outline-none focus:ring-2 focus:ring-blue-500;
+}
