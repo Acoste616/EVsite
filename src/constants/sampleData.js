@@ -150,5 +150,4 @@ export const sampleTeslaProducts = [
 
 export const logoUrl = `${process.env.PUBLIC_URL}/logo.png`;
 export const defaultProductImageUrl = `${process.env.PUBLIC_URL}/default-product.png`;
-export const heroImageUrl =
-  'https://images.unsplash.com/photo-1619623697969-9f15038c1a16?q=80&w=2070&auto=format&fit=crop';
+export const heroImageUrl = `${process.env.PUBLIC_URL}/hero-background.jpg`;

@@ -25,16 +25,16 @@ import {
 } from 'firebase/firestore';
 import { auth, db } from './services/firebase';
 import { api } from './services/api';
-import {
-  logoUrl,
-  heroImageUrl,
-} from './constants/sampleData';
+import { heroImageUrl } from './constants/sampleData';
+import Header from './components/Header';
+import Footer from './components/Footer';
+import ProductCard from './components/ProductCard';
+import ErrorBoundary from './components/ErrorBoundary';
+import PerformanceMonitor from './components/PerformanceMonitor';
+import AccessibilityHelper from './components/AccessibilityHelper';
 import {
   ShoppingCart,
-  User,
   Star,
-  Menu,
-  X,
   Trash2,
   Plus,
   Minus,
@@ -42,8 +42,6 @@ import {
   CreditCard,
   ShieldCheck,
   Filter,
-  LogOut,
-  Settings,
   Zap,
   AlertCircle,
   CheckCircle,
@@ -94,235 +92,13 @@ const LoadingScreen = () => (
   </div>
 );
 
-// --- KOMPONENTY UI ---
-const Header = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
-  const { user, userRole, cartItemCount, navigate, handleLogout } =
-    useAppContext();
+// Extracted UI components are now imported from components/
 
-  return (
-    <header className="bg-gray-900 bg-opacity-80 text-white p-4 flex items-center justify-between fixed top-0 left-0 right-0 z-40 backdrop-blur-sm">
-      <div className="flex items-center space-x-6">
-        <a onClick={() => navigate('home')} className="cursor-pointer">
-          <img src={logoUrl} alt="EV-Shop Logo" className="h-10" />
-        </a>
-        <nav className="hidden md:flex items-center space-x-6">
-          <a
-            onClick={() => navigate('category', 'Ładowarki')}
-            className="hover:text-blue-400 transition-colors"
-          >
-            Ładowarki
-          </a>
-          <a
-            onClick={() => navigate('category', 'Adaptery')}
-            className="hover:text-blue-400 transition-colors"
-          >
-            Adaptery
-          </a>
-          <a
-            onClick={() => navigate('category', 'Akcesoria')}
-            className="hover:text-blue-400 transition-colors"
-          >
-            Akcesoria
-          </a>
-          <a
-            onClick={() => navigate('category', 'Baterie')}
-            className="hover:text-blue-400 transition-colors"
-          >
-            Baterie
-          </a>
-        </nav>
-      </div>
+// Footer component moved to components/Footer.js
 
-      <div className="flex items-center space-x-4">
-        <div className="hidden md:flex items-center space-x-4">
-          <a
-            onClick={() => navigate('cart')}
-            className="relative cursor-pointer group"
-          >
-            <ShoppingCart className="h-7 w-7 text-gray-400 group-hover:text-blue-400 transition-colors" />
-            {cartItemCount > 0 && (
-              <span className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center animate-pulse">
-                {cartItemCount}
-              </span>
-            )}
-          </a>
-          <div className="relative group">
-            <a
-              onClick={() => (user ? null : navigate('login'))}
-              className="cursor-pointer"
-            >
-              <User className="h-7 w-7 text-gray-400 group-hover:text-blue-400 transition-colors" />
-            </a>
-            {user ? (
-              <div className="absolute right-0 mt-2 w-56 bg-gray-800 border border-gray-700 rounded-md shadow-lg py-1 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                <p className="px-4 py-2 text-sm text-gray-400 border-b border-gray-700">
-                  Zalogowano jako:
-                </p>
-                <p className="px-4 pt-1 pb-2 text-sm text-white truncate">
-                  {user.email}
-                </p>
-                {userRole === 'admin' && (
-                  <a
-                    onClick={() => navigate('admin')}
-                    className="flex items-center w-full px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 cursor-pointer"
-                  >
-                    <Settings className="w-4 h-4 mr-2" />
-                    Panel Admina
-                  </a>
-                )}
-                <a
-                  onClick={handleLogout}
-                  className="flex items-center w-full px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 cursor-pointer"
-                >
-                  <LogOut className="w-4 h-4 mr-2" />
-                  Wyloguj
-                </a>
-              </div>
-            ) : (
-              <div className="absolute right-0 mt-2 w-48 bg-gray-800 border border-gray-700 rounded-md shadow-lg py-1 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                <a
-                  onClick={() => navigate('login')}
-                  className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 cursor-pointer"
-                >
-                  Zaloguj się
-                </a>
-                <a
-                  onClick={() => navigate('register')}
-                  className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 cursor-pointer"
-                >
-                  Zarejestruj się
-                </a>
-              </div>
-            )}
-          </div>
-        </div>
-        <div className="md:hidden">
-          <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
-            {isMobileMenuOpen ? (
-              <X className="h-7 w-7" />
-            ) : (
-              <Menu className="h-7 w-7" />
-            )}
-          </button>
-        </div>
-      </div>
-    </header>
-  );
-};
+// ProductCard component moved to components/ProductCard.js
 
-const Footer = () => (
-  <footer className="bg-gray-900 text-gray-400 py-12">
-    <div className="container mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 px-4">
-      <div>
-        <h3 className="font-bold text-white mb-4">EV-Shop</h3>
-        <p>Twoje źródło energii dla mobilności.</p>
-      </div>
-      <div>
-        <h3 className="font-bold text-white mb-4">Kategorie</h3>
-        <ul>
-          <li>
-            <a href="#" className="hover:text-white">
-              Ładowarki
-            </a>
-          </li>
-          <li>
-            <a href="#" className="hover:text-white">
-              Adaptery
-            </a>
-          </li>
-          <li>
-            <a href="#" className="hover:text-white">
-              Akcesoria
-            </a>
-          </li>
-          <li>
-            <a href="#" className="hover:text-white">
-              Baterie
-            </a>
-          </li>
-        </ul>
-      </div>
-      <div>
-        <h3 className="font-bold text-white mb-4">Obsługa Klienta</h3>
-        <ul>
-          <li>
-            <a href="#" className="hover:text-white">
-              Kontakt
-            </a>
-          </li>
-          <li>
-            <a href="#" className="hover:text-white">
-              FAQ
-            </a>
-          </li>
-          <li>
-            <a href="#" className="hover:text-white">
-              Dostawa i zwroty
-            </a>
-          </li>
-        </ul>
-      </div>
-      <div>
-        <h3 className="font-bold text-white mb-4">Newsletter</h3>
-        <input
-          type="email"
-          placeholder="Twój e-mail"
-          className="bg-gray-800 p-2 rounded w-full mb-2"
-        />
-        <button className="bg-blue-600 text-white py-2 px-4 rounded w-full hover:bg-blue-700">
-          Zapisz się
-        </button>
-      </div>
-    </div>
-    <div className="text-center mt-8 pt-8 border-t border-gray-800">
-      <p>&copy; 2024 EV-Shop. Wszystkie prawa zastrzeżone.</p>
-    </div>
-  </footer>
-);
-
-const ProductCard = ({ product, navigate }) => {
-  return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.9 }}
-      transition={{ duration: 0.3 }}
-      onClick={() => navigate('product', product.id)}
-      className="bg-gray-800 rounded-lg overflow-hidden shadow-lg cursor-pointer group"
-    >
-      <div className="relative h-56">
-        <img
-          src={product.imageUrls[0] || defaultProductImageUrl}
-          alt={product.name}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-        />
-        {product.bestseller && (
-          <div className="absolute top-2 left-2 bg-yellow-500 text-gray-900 px-2 py-1 text-xs font-bold rounded">
-            BESTSELLER
-          </div>
-        )}
-      </div>
-      <div className="p-4">
-        <h3 className="text-lg font-semibold text-white truncate">
-          {product.name}
-        </h3>
-        <p className="text-gray-400 text-sm mb-2">
-          {product.brand} - {product.category}
-        </p>
-        <div className="flex items-center justify-between">
-          <p className="text-xl font-bold text-blue-400">{product.price} PLN</p>
-          <div className="flex items-center">
-            <Star className="w-5 h-5 text-yellow-400" />
-            <span className="text-white ml-1">{product.rating}</span>
-          </div>
-        </div>
-      </div>
-    </motion.div>
-  );
-};
-
-const BestsellersSection = ({ products, navigate }) => {
+const BestsellersSection = ({ products, navigate, addToCart }) => {
   const featuredProducts = products.filter(p => p.bestseller).slice(0, 4);
 
   return (
@@ -332,7 +108,12 @@ const BestsellersSection = ({ products, navigate }) => {
       </h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
         {featuredProducts.map(product => (
-          <ProductCard key={product.id} product={product} navigate={navigate} />
+          <ProductCard
+            key={product.id}
+            product={product}
+            navigate={navigate}
+            addToCart={addToCart}
+          />
         ))}
       </div>
     </section>
@@ -405,21 +186,25 @@ const FeaturedInfoSection = () => (
   </section>
 );
 
-const HomePage = ({ products, categories, navigate }) => (
+const HomePage = ({ products, categories, navigate, addToCart }) => (
   <div>
     <HeroSection navigate={navigate} />
     <main
       id="products-section"
       className="container mx-auto p-4 -mt-24 relative z-10 bg-gray-900 rounded-t-2xl shadow-lg"
     >
-      <BestsellersSection products={products} navigate={navigate} />
+      <BestsellersSection
+        products={products}
+        navigate={navigate}
+        addToCart={addToCart}
+      />
       <CategoriesSection categories={categories} navigate={navigate} />
       <FeaturedInfoSection />
     </main>
   </div>
 );
 
-const CategoryPage = ({ navigate, products, categoryName }) => {
+const CategoryPage = ({ navigate, products, categoryName, addToCart }) => {
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [priceRange, setPriceRange] = useState([0, 30000]);
@@ -558,6 +343,7 @@ const CategoryPage = ({ navigate, products, categoryName }) => {
                   key={product.id}
                   product={product}
                   navigate={navigate}
+                  addToCart={addToCart}
                 />
               ))}
             </div>
@@ -1733,40 +1519,128 @@ const AdminOrders = () => {
   );
 };
 
-const HeroSection = ({ navigate }) => (
-  <section
-    className="relative h-screen bg-cover bg-center flex flex-col items-center justify-center text-white"
-    style={{ backgroundImage: `url(${heroImageUrl})` }}
-  >
-    <div className="absolute inset-0 bg-black opacity-50"></div>
-    <div className="relative z-10 text-center container mx-auto px-4">
-      <motion.h1
-        initial={{ opacity: 0, y: -50 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 1 }}
-        className="text-4xl md:text-6xl font-extrabold mb-4"
+const HeroSection = ({ navigate }) => {
+  const [bgImageError, setBgImageError] = useState(false);
+
+  const handleBgImageError = () => {
+    setBgImageError(true);
+  };
+
+  return (
+    <section
+      className="relative w-full h-screen min-h-screen flex items-center justify-center overflow-hidden p-0 m-0"
+      style={{ minHeight: '100vh', height: '100vh', maxHeight: '1200px' }}
+    >
+      {/* Background image fills the viewport */}
+      {!bgImageError && (
+        <img
+          src={heroImageUrl}
+          alt="Tło EV-Shop"
+          className="absolute top-0 left-0 w-full h-full object-cover object-center z-0 select-none pointer-events-none"
+          style={{ width: '100vw', height: '100vh', minHeight: '100vh', minWidth: '100vw' }}
+          onError={handleBgImageError}
+          draggable="false"
+        />
+      )}
+      {/* Overlay for readability */}
+      <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-b from-black/80 via-black/40 to-black/90 z-10 pointer-events-none" />
+      {/* Animated SVG lines with horizontal mask (glow only on sides) */}
+      <svg
+        className="absolute top-0 left-0 w-full h-full z-20 pointer-events-none"
+        viewBox="0 0 1920 800"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        style={{ width: '100vw', height: '100vh', minWidth: '100vw', minHeight: '100vh', maskImage: 'linear-gradient(to right, rgba(0,0,0,1) 0%, rgba(0,0,0,0.1) 40%, rgba(0,0,0,0.1) 60%, rgba(0,0,0,1) 100%)', WebkitMaskImage: 'linear-gradient(to right, rgba(0,0,0,1) 0%, rgba(0,0,0,0.1) 40%, rgba(0,0,0,0.1) 60%, rgba(0,0,0,1) 100%)' }}
       >
-        Energia dla Twojej podróży
-      </motion.h1>
-      <motion.p
-        initial={{ opacity: 0, y: 50 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 1, delay: 0.5 }}
-        className="text-lg md:text-xl mb-8"
-      >
-        Najwyższej jakości ładowarki i akcesoria do pojazdów elektrycznych.
-      </motion.p>
-      <motion.button
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-        onClick={() => navigate('products')}
-        className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-full text-lg transition duration-300"
-      >
-        Odkryj produkty
-      </motion.button>
-    </div>
-  </section>
-);
+        <g>
+          <path
+            d="M0 400 Q480 200 960 400 T1920 400"
+            stroke="#00eaff"
+            strokeWidth="4"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="hero-line"
+          />
+          <path
+            d="M0 500 Q480 300 960 500 T1920 500"
+            stroke="#00eaff"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="hero-line hero-line-delay"
+          />
+          <path
+            d="M0 600 Q480 400 960 600 T1920 600"
+            stroke="#00eaff"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="hero-line hero-line-delay2"
+          />
+        </g>
+      </svg>
+      {/* Content (car + text) above lines */}
+      <div className="relative z-30 flex flex-col items-center justify-center w-full h-full text-center container mx-auto px-4">
+        <motion.h1
+          initial={{ opacity: 0, y: -50 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1 }}
+          className="text-4xl md:text-6xl font-extrabold mb-4 neon-text"
+        >
+          Energia dla Twojej podróży
+        </motion.h1>
+        <motion.p
+          initial={{ opacity: 0, y: 50 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1, delay: 0.5 }}
+          className="text-lg md:text-xl mb-8"
+        >
+          Najwyższej jakości ładowarki i akcesoria do pojazdów elektrycznych.
+        </motion.p>
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => navigate('products')}
+          className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-full text-lg transition duration-300 shadow-lg shadow-blue-400/30"
+        >
+          Odkryj produkty
+        </motion.button>
+      </div>
+      <style>{`
+        .neon-text {
+          text-shadow:
+            0 0 8px #00eaff,
+            0 0 16px #00eaff,
+            0 0 32px #00eaff,
+            0 0 64px #00eaff;
+          animation: neon-glow 2s infinite alternate;
+        }
+        @keyframes neon-glow {
+          0% { text-shadow: 0 0 8px #00eaff, 0 0 16px #00eaff, 0 0 32px #00eaff, 0 0 64px #00eaff; }
+          100% { text-shadow: 0 0 24px #00eaff, 0 0 48px #00eaff, 0 0 96px #00eaff, 0 0 128px #00eaff; }
+        }
+        .hero-line {
+          filter: drop-shadow(0 0 12px #00eaff);
+          opacity: 0.7;
+          stroke-dasharray: 3000;
+          stroke-dashoffset: 0;
+          animation: line-pulse 3s infinite alternate;
+        }
+        .hero-line-delay {
+          animation-delay: 1s;
+        }
+        .hero-line-delay2 {
+          animation-delay: 2s;
+        }
+        @keyframes line-pulse {
+          0% { opacity: 0.3; stroke-dashoffset: 0; }
+          50% { opacity: 1; stroke-dashoffset: 100; }
+          100% { opacity: 0.3; stroke-dashoffset: 0; }
+        }
+      `}</style>
+    </section>
+  );
+};
 
 export default function App() {
   const [page, setPage] = useState('home');
@@ -1894,6 +1768,7 @@ export default function App() {
             products={products}
             categories={categories}
             navigate={navigate}
+            addToCart={addToCart}
           />
         );
       case 'category':
@@ -1902,6 +1777,7 @@ export default function App() {
             navigate={navigate}
             products={products}
             categoryName={pageData}
+            addToCart={addToCart}
           />
         );
       case 'product':
@@ -1933,6 +1809,7 @@ export default function App() {
             products={products}
             categories={categories}
             navigate={navigate}
+            addToCart={addToCart}
           />
         );
     }
@@ -1955,105 +1832,118 @@ export default function App() {
   };
 
   return (
-    <AppContext.Provider value={contextValue}>
-      <div className="bg-gray-900 min-h-screen font-sans">
-        {isLoading && <LoadingScreen />}
-        <NotificationCenter notifications={notifications} />
-        <Header
-          isMobileMenuOpen={isMobileMenuOpen}
-          setIsMobileMenuOpen={setIsMobileMenuOpen}
-        />
+    <ErrorBoundary>
+      <PerformanceMonitor />
+      <AccessibilityHelper />
+      <AppContext.Provider value={contextValue}>
+        <div className="bg-gray-900 min-h-screen font-sans">
+          {isLoading && <LoadingScreen />}
+          <NotificationCenter notifications={notifications} />
+          <Header
+            isMobileMenuOpen={isMobileMenuOpen}
+            setIsMobileMenuOpen={setIsMobileMenuOpen}
+            user={user}
+            userRole={userRole}
+            cartItemCount={cartItemCount}
+            navigate={navigate}
+            handleLogout={handleLogout}
+          />
 
-        <AnimatePresence mode="wait">
-          <motion.main
-            key={page}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            {renderPage()}
-          </motion.main>
-        </AnimatePresence>
-
-        <AnimatePresence>
-          {isMobileMenuOpen && (
-            <motion.div
-              initial={{ x: '100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '100%' }}
-              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-              className="fixed top-0 right-0 h-full w-64 bg-gray-800 z-30 p-6 md:hidden"
+          <AnimatePresence mode="wait">
+            <motion.main
+              id="main-content"
+              role="main"
+              aria-label="Główna treść strony"
+              key={page}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              tabIndex="-1"
             >
-              <nav className="flex flex-col space-y-4 text-white">
-                <a
-                  onClick={() => navigate('category', 'Ładowarki')}
-                  className="hover:text-blue-400"
-                >
-                  Ładowarki
-                </a>
-                <a
-                  onClick={() => navigate('category', 'Adaptery')}
-                  className="hover:text-blue-400"
-                >
-                  Adaptery
-                </a>
-                <a
-                  onClick={() => navigate('category', 'Akcesoria')}
-                  className="hover:text-blue-400"
-                >
-                  Akcesoria
-                </a>
-                <a
-                  onClick={() => navigate('category', 'Baterie')}
-                  className="hover:text-blue-400"
-                >
-                  Baterie
-                </a>
-                <hr className="border-gray-700" />
-                <a
-                  onClick={() => navigate('cart')}
-                  className="hover:text-blue-400"
-                >
-                  Koszyk ({cartItemCount})
-                </a>
-                {user ? (
-                  <>
-                    {userRole === 'admin' && (
+              <ErrorBoundary>{renderPage()}</ErrorBoundary>
+            </motion.main>
+          </AnimatePresence>
+
+          <AnimatePresence>
+            {isMobileMenuOpen && (
+              <motion.div
+                initial={{ x: '100%' }}
+                animate={{ x: 0 }}
+                exit={{ x: '100%' }}
+                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                className="fixed top-0 right-0 h-full w-64 bg-gray-800 z-30 p-6 md:hidden"
+              >
+                <nav className="flex flex-col space-y-4 text-white">
+                  <a
+                    onClick={() => navigate('category', 'Ładowarki')}
+                    className="hover:text-blue-400"
+                  >
+                    Ładowarki
+                  </a>
+                  <a
+                    onClick={() => navigate('category', 'Adaptery')}
+                    className="hover:text-blue-400"
+                  >
+                    Adaptery
+                  </a>
+                  <a
+                    onClick={() => navigate('category', 'Akcesoria')}
+                    className="hover:text-blue-400"
+                  >
+                    Akcesoria
+                  </a>
+                  <a
+                    onClick={() => navigate('category', 'Baterie')}
+                    className="hover:text-blue-400"
+                  >
+                    Baterie
+                  </a>
+                  <hr className="border-gray-700" />
+                  <a
+                    onClick={() => navigate('cart')}
+                    className="hover:text-blue-400"
+                  >
+                    Koszyk ({cartItemCount})
+                  </a>
+                  {user ? (
+                    <>
+                      {userRole === 'admin' && (
+                        <a
+                          onClick={() => navigate('admin')}
+                          className="hover:text-blue-400"
+                        >
+                          Panel Admina
+                        </a>
+                      )}
+                      <a onClick={handleLogout} className="hover:text-blue-400">
+                        Wyloguj
+                      </a>
+                    </>
+                  ) : (
+                    <>
                       <a
-                        onClick={() => navigate('admin')}
+                        onClick={() => navigate('login')}
                         className="hover:text-blue-400"
                       >
-                        Panel Admina
+                        Zaloguj się
                       </a>
-                    )}
-                    <a onClick={handleLogout} className="hover:text-blue-400">
-                      Wyloguj
-                    </a>
-                  </>
-                ) : (
-                  <>
-                    <a
-                      onClick={() => navigate('login')}
-                      className="hover:text-blue-400"
-                    >
-                      Zaloguj się
-                    </a>
-                    <a
-                      onClick={() => navigate('register')}
-                      className="hover:text-blue-400"
-                    >
-                      Zarejestruj się
-                    </a>
-                  </>
-                )}
-              </nav>
-            </motion.div>
-          )}
-        </AnimatePresence>
+                      <a
+                        onClick={() => navigate('register')}
+                        className="hover:text-blue-400"
+                      >
+                        Zarejestruj się
+                      </a>
+                    </>
+                  )}
+                </nav>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-        <Footer />
-      </div>
-    </AppContext.Provider>
+          <Footer />
+        </div>
+      </AppContext.Provider>
+    </ErrorBoundary>
   );
 }
